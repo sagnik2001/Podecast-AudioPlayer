@@ -14,8 +14,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {ShelfCard} from '../components/ShelfCard';
+import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {featuredEpisode, episodes, libraryStats, shelves} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
+import {usePodcastEpisodes, usePodcastSearch} from '../queries/podcastQueries';
 import {colors} from '../theme/colors';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -23,6 +25,16 @@ type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const splashArt = require('../assets/images/splash-art.png');
 
 export function HomeScreen({navigation}: HomeScreenProps) {
+  const podcastSearch = usePodcastSearch();
+  const selectedShow = podcastSearch.data?.[0];
+  const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
+  const liveEpisodes =
+    podcastEpisodes.data?.slice(0, 4).map(mapPodcastEpisodeToEpisode) ?? [];
+  const displayEpisodes = liveEpisodes.length > 0 ? liveEpisodes : episodes.slice(0, 4);
+  const heroEpisode = displayEpisodes[0] ?? featuredEpisode;
+  const isLoadingRealData = podcastSearch.isLoading || podcastEpisodes.isLoading;
+  const dataLabel = selectedShow ? selectedShow.title : 'iTunes podcast feed';
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
@@ -46,13 +58,15 @@ export function HomeScreen({navigation}: HomeScreenProps) {
           <View style={styles.heroShade} />
           <View style={styles.heroCopy}>
             <Text style={styles.heroKicker}>Continue listening</Text>
-            <Text style={styles.heroTitle}>{featuredEpisode.title}</Text>
-            <Text style={styles.heroBody}>{featuredEpisode.description}</Text>
+            <Text style={styles.heroTitle}>{heroEpisode.title}</Text>
+            <Text style={styles.heroBody}>{heroEpisode.description}</Text>
           </View>
           <View style={styles.heroFooter}>
             <View style={styles.livePill}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>Ready for TrackPlayer</Text>
+              <Text numberOfLines={1} style={styles.liveText}>
+                {isLoadingRealData ? 'Loading real feed' : dataLabel}
+              </Text>
             </View>
             <TouchableOpacity activeOpacity={0.82} style={styles.primaryButton}>
               <Text style={styles.primaryButtonText}>Resume</Text>
@@ -94,13 +108,13 @@ export function HomeScreen({navigation}: HomeScreenProps) {
           </TouchableOpacity>
         </View>
 
-        {episodes.slice(0, 4).map(episode => (
+        {displayEpisodes.map(episode => (
           <EpisodeCard episode={episode} key={episode.id} />
         ))}
       </ScrollView>
 
       <View style={styles.dock}>
-        <PlayerDock episode={featuredEpisode} />
+        <PlayerDock episode={heroEpisode} />
       </View>
     </SafeAreaView>
   );
@@ -215,7 +229,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     flexDirection: 'row',
+    flexShrink: 1,
     gap: 8,
+    marginRight: 10,
+    maxWidth: 210,
     paddingHorizontal: 11,
     paddingVertical: 10,
   },
@@ -227,6 +244,7 @@ const styles = StyleSheet.create({
   },
   liveText: {
     color: colors.ink,
+    flexShrink: 1,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0,

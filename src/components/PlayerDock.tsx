@@ -14,7 +14,7 @@ export function PlayerDock({episode}: PlayerDockProps) {
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <CoverArt accent={episode.accent} phase="Live" size={54} />
+        <CoverArt accent={episode.accent} imageUrl={episode.imageUrl} phase="Live" size={54} />
         <View style={styles.meta}>
           <Text numberOfLines={1} style={styles.label}>
             From {episode.show}

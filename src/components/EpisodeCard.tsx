@@ -14,7 +14,12 @@ type EpisodeCardProps = {
 export function EpisodeCard({episode, compact = false}: EpisodeCardProps) {
   return (
     <TouchableOpacity activeOpacity={0.82} style={[styles.card, compact && styles.compact]}>
-      <CoverArt accent={episode.accent} phase={episode.phase} size={compact ? 72 : 88} />
+      <CoverArt
+        accent={episode.accent}
+        imageUrl={episode.imageUrl}
+        phase={episode.phase}
+        size={compact ? 72 : 88}
+      />
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={[styles.show, {color: episode.accent}]}>{episode.show}</Text>

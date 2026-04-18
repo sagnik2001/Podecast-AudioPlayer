@@ -17,3 +17,23 @@ jest.mock('react-native-reanimated', () => {
     withTiming: value => value,
   };
 });
+
+jest.mock('react-native-nitro-fetch', () => ({
+  fetch: jest.fn(async () => ({
+    json: async () => ({
+      resultCount: 0,
+      results: [],
+    }),
+    ok: true,
+    status: 200,
+  })),
+}));
+
+jest.mock('@shopify/flash-list', () => {
+  const React = require('react');
+  const {FlatList} = require('react-native');
+
+  return {
+    FlashList: props => React.createElement(FlatList, props),
+  };
+});

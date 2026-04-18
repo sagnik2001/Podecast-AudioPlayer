@@ -1,21 +1,28 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 
 import {colors} from '../theme/colors';
 
 type CoverArtProps = {
   accent: string;
   phase: string;
+  imageUrl?: string;
   size?: number;
 };
 
-export function CoverArt({accent, phase, size = 92}: CoverArtProps) {
+export function CoverArt({accent, phase, imageUrl, size = 92}: CoverArtProps) {
   return (
     <View style={[styles.cover, {backgroundColor: accent, width: size, height: size}]}>
-      <View style={styles.innerGlow} />
-      <View style={styles.ring} />
-      <Text style={styles.phase}>{phase}</Text>
-      <Text style={styles.mark}>RN</Text>
+      {imageUrl ? (
+        <Image source={{uri: imageUrl}} style={styles.image} />
+      ) : (
+        <>
+          <View style={styles.innerGlow} />
+          <View style={styles.ring} />
+          <Text style={styles.phase}>{phase}</Text>
+          <Text style={styles.mark}>RN</Text>
+        </>
+      )}
     </View>
   );
 }
@@ -26,6 +33,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     overflow: 'hidden',
     padding: 12,
+  },
+  image: {
+    height: '100%',
+    left: 0,
+    position: 'absolute',
+    top: 0,
+    width: '100%',
   },
   innerGlow: {
     backgroundColor: colors.black,

@@ -13,6 +13,8 @@ export type Episode = {
   accent: string;
   downloaded?: boolean;
   queuePosition?: number;
+  audioUrl?: string;
+  imageUrl?: string;
 };
 
 export const featuredEpisode: Episode = {
