@@ -17,7 +17,7 @@ import {ShelfCard} from '../components/ShelfCard';
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {featuredEpisode, episodes, libraryStats, shelves} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
-import {usePodcastEpisodes, usePodcastSearch} from '../queries/podcastQueries';
+import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
 import {colors} from '../theme/colors';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -25,14 +25,14 @@ type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const splashArt = require('../assets/images/splash-art.png');
 
 export function HomeScreen({navigation}: HomeScreenProps) {
-  const podcastSearch = usePodcastSearch();
-  const selectedShow = podcastSearch.data?.[0];
+  const podcastDiscovery = usePodcastDiscovery();
+  const selectedShow = podcastDiscovery.data?.[0];
   const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
   const liveEpisodes =
     podcastEpisodes.data?.slice(0, 4).map(mapPodcastEpisodeToEpisode) ?? [];
   const displayEpisodes = liveEpisodes.length > 0 ? liveEpisodes : episodes.slice(0, 4);
   const heroEpisode = displayEpisodes[0] ?? featuredEpisode;
-  const isLoadingRealData = podcastSearch.isLoading || podcastEpisodes.isLoading;
+  const isLoadingRealData = podcastDiscovery.isLoading || podcastEpisodes.isLoading;
   const dataLabel = selectedShow ? selectedShow.title : 'iTunes podcast feed';
 
   return (
@@ -114,7 +114,7 @@ export function HomeScreen({navigation}: HomeScreenProps) {
       </ScrollView>
 
       <View style={styles.dock}>
-        <PlayerDock episode={heroEpisode} />
+        <PlayerDock episode={heroEpisode} queue={displayEpisodes} />
       </View>
     </SafeAreaView>
   );

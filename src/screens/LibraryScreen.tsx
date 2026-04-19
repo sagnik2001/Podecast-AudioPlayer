@@ -9,7 +9,7 @@ import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {Episode, episodes, featuredEpisode, libraryStats} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
-import {usePodcastEpisodes, usePodcastSearch} from '../queries/podcastQueries';
+import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
 import {colors} from '../theme/colors';
 
 type LibraryScreenProps = NativeStackScreenProps<RootStackParamList, 'Library'>;
@@ -19,8 +19,8 @@ const episodePageSize = 6;
 
 export function LibraryScreen({navigation}: LibraryScreenProps) {
   const [visibleEpisodeCount, setVisibleEpisodeCount] = useState(initialEpisodeCount);
-  const podcastSearch = usePodcastSearch();
-  const selectedShow = podcastSearch.data?.[0];
+  const podcastDiscovery = usePodcastDiscovery();
+  const selectedShow = podcastDiscovery.data?.[0];
   const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
   const liveEpisodes =
     podcastEpisodes.data?.map(mapPodcastEpisodeToEpisode) ?? [];
@@ -121,7 +121,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
       />
 
       <View style={styles.dock}>
-        <PlayerDock episode={currentEpisode} />
+        <PlayerDock episode={currentEpisode} queue={orderedEpisodes} />
       </View>
     </SafeAreaView>
   );

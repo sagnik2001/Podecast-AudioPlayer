@@ -31,7 +31,7 @@ export type Rss2JsonEnclosure = {
   link?: string;
   type?: string;
   length?: number;
-  duration?: string;
+  duration?: number | string;
 };
 
 export type Rss2JsonItem = {
@@ -67,6 +67,6 @@ export type PodcastEpisode = {
   description: string;
   publishedAt?: string;
   audioUrl?: string;
-  duration?: string;
+  duration?: number | string;
   imageUrl?: string;
 };

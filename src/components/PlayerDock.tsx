@@ -1,16 +1,71 @@
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  useActiveTrack,
+  usePlaybackState,
+  useProgress,
+} from 'react-native-track-player';
 
 import {Episode} from '../data/episodes';
+import {
+  isPlaybackStatePlaying,
+  seekBy,
+  toggleEpisodePlayback,
+} from '../services/trackPlayer';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
 import {ProgressBar} from './ProgressBar';
 
 type PlayerDockProps = {
   episode: Episode;
+  queue?: Episode[];
 };
 
-export function PlayerDock({episode}: PlayerDockProps) {
+export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
+  const [isBusy, setIsBusy] = useState(false);
+  const playbackState = usePlaybackState();
+  const activeTrack = useActiveTrack();
+  const progress = useProgress(500);
+  const isCurrentTrack = activeTrack?.id === episode.id;
+  const isPlaying = isCurrentTrack && isPlaybackStatePlaying(playbackState.state);
+  const canPlay = Boolean(episode.audioUrl);
+  const progressRatio = useMemo(() => {
+    if (!isCurrentTrack || progress.duration <= 0) {
+      return episode.progress;
+    }
+
+    return progress.position / progress.duration;
+  }, [episode.progress, isCurrentTrack, progress.duration, progress.position]);
+
+  const positionLabel = isCurrentTrack
+    ? formatPlaybackTime(progress.position)
+    : formatEpisodeStartTime(episode.progress, episode.duration);
+  const durationLabel = isCurrentTrack
+    ? formatPlaybackTime(progress.duration)
+    : formatEpisodeDuration(episode.duration);
+
+  const onTogglePlayback = async () => {
+    if (!canPlay || isBusy) {
+      return;
+    }
+
+    setIsBusy(true);
+
+    try {
+      await toggleEpisodePlayback(episode, isPlaying, queue);
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const onRewind = async () => {
+    if (!isCurrentTrack || isBusy) {
+      return;
+    }
+
+    await seekBy(-15);
+  };
+
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
@@ -23,20 +78,96 @@ export function PlayerDock({episode}: PlayerDockProps) {
             {episode.title}
           </Text>
         </View>
-        <TouchableOpacity activeOpacity={0.75} style={styles.skipButton}>
+        <TouchableOpacity
+          activeOpacity={0.75}
+          disabled={!isCurrentTrack}
+          onPress={onRewind}
+          style={[styles.skipButton, !isCurrentTrack && styles.disabledButton]}>
           <Text style={styles.skipText}>-15</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.75} style={styles.playButton}>
-          <Text style={styles.playText}>Pause</Text>
+        <TouchableOpacity
+          activeOpacity={0.75}
+          disabled={!canPlay || isBusy}
+          onPress={onTogglePlayback}
+          style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
+          <Text style={styles.playText}>
+            {!canPlay ? 'No audio' : isPlaying ? 'Pause' : 'Play'}
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.progressRow}>
-        <Text style={styles.time}>24:18</Text>
-        <ProgressBar progress={episode.progress} height={4} />
-        <Text style={styles.time}>38:00</Text>
+        <Text style={styles.time}>{positionLabel}</Text>
+        <ProgressBar progress={progressRatio} height={4} />
+        <Text style={styles.time}>{durationLabel}</Text>
       </View>
     </View>
   );
+}
+
+function formatPlaybackTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '0:00';
+  }
+
+  const totalSeconds = Math.floor(seconds);
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
+function formatEpisodeStartTime(progress: number, duration: string) {
+  const totalSeconds = parseDurationToSeconds(duration);
+
+  if (totalSeconds <= 0) {
+    return '0:00';
+  }
+
+  return formatPlaybackTime(totalSeconds * progress);
+}
+
+function formatEpisodeDuration(duration: string) {
+  const totalSeconds = parseDurationToSeconds(duration);
+
+  if (totalSeconds <= 0) {
+    return duration || 'Podcast';
+  }
+
+  return formatPlaybackTime(totalSeconds);
+}
+
+function parseDurationToSeconds(duration: unknown) {
+  if (typeof duration === 'number') {
+    return Number.isFinite(duration) ? duration : 0;
+  }
+
+  if (typeof duration !== 'string') {
+    return 0;
+  }
+
+  const value = duration.trim();
+
+  if (!value) {
+    return 0;
+  }
+
+  if (value.includes(':')) {
+    return value
+      .split(':')
+      .map(part => Number.parseInt(part, 10))
+      .filter(part => !Number.isNaN(part))
+      .reduce((seconds, part) => seconds * 60 + part, 0);
+  }
+
+  const numericValue = Number.parseFloat(value);
+
+  if (Number.isNaN(numericValue)) {
+    return 0;
+  }
+
+  return value.toLowerCase().includes('hour')
+    ? numericValue * 60 * 60
+    : numericValue * 60;
 }
 
 const styles = StyleSheet.create({
@@ -90,6 +221,9 @@ const styles = StyleSheet.create({
     height: 46,
     justifyContent: 'center',
     paddingHorizontal: 16,
+  },
+  disabledButton: {
+    opacity: 0.46,
   },
   playText: {
     color: colors.background,

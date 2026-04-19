@@ -37,3 +37,54 @@ jest.mock('@shopify/flash-list', () => {
     FlashList: props => React.createElement(FlatList, props),
   };
 });
+
+jest.mock('react-native-track-player', () => {
+  const State = {
+    Buffering: 'buffering',
+    Paused: 'paused',
+    Playing: 'playing',
+    Ready: 'ready',
+  };
+
+  const Capability = {
+    Pause: 'pause',
+    Play: 'play',
+    SeekTo: 'seek-to',
+    SkipToNext: 'skip-to-next',
+    SkipToPrevious: 'skip-to-previous',
+  };
+
+  return {
+    __esModule: true,
+    default: {
+      add: jest.fn(),
+      getActiveTrack: jest.fn(async () => undefined),
+      pause: jest.fn(),
+      play: jest.fn(),
+      registerPlaybackService: jest.fn(),
+      reset: jest.fn(),
+      seekBy: jest.fn(),
+      seekTo: jest.fn(),
+      setupPlayer: jest.fn(),
+      skipToNext: jest.fn(),
+      skipToPrevious: jest.fn(),
+      updateOptions: jest.fn(),
+    },
+    Capability,
+    Event: {
+      RemoteNext: 'remote-next',
+      RemotePause: 'remote-pause',
+      RemotePlay: 'remote-play',
+      RemotePrevious: 'remote-previous',
+      RemoteSeek: 'remote-seek',
+    },
+    State,
+    useActiveTrack: () => undefined,
+    usePlaybackState: () => ({state: State.Paused}),
+    useProgress: () => ({
+      buffered: 0,
+      duration: 0,
+      position: 0,
+    }),
+  };
+});

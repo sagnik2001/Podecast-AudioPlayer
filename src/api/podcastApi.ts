@@ -9,11 +9,25 @@ import {
 const ITUNES_SEARCH_URL = 'https://itunes.apple.com/search';
 const RSS_TO_JSON_URL = 'https://api.rss2json.com/v1/api.json';
 
-export async function searchPodcasts(term: string): Promise<PodcastShow[]> {
+type PodcastSearchOptions = {
+  country?: string;
+  limit?: number;
+};
+
+const defaultSearchOptions: Required<PodcastSearchOptions> = {
+  country: 'US',
+  limit: 20,
+};
+
+export async function searchPodcasts(
+  term: string,
+  options: PodcastSearchOptions = {},
+): Promise<PodcastShow[]> {
+  const searchOptions = {...defaultSearchOptions, ...options};
   const url = buildUrl(ITUNES_SEARCH_URL, {
-    country: 'US',
+    country: searchOptions.country,
     entity: 'podcast',
-    limit: '20',
+    limit: String(searchOptions.limit),
     media: 'podcast',
     term,
   });
@@ -30,6 +44,17 @@ export async function searchPodcasts(term: string): Promise<PodcastShow[]> {
       artworkUrl: item.artworkUrl600 || item.artworkUrl100,
       genre: item.primaryGenreName || item.genres?.[0],
     }));
+}
+
+export async function searchPodcastsAcrossTerms(
+  terms: readonly string[],
+  options: PodcastSearchOptions = {},
+): Promise<PodcastShow[]> {
+  const results = await Promise.all(
+    terms.map(term => searchPodcasts(term, options)),
+  );
+
+  return uniqueShowsByFeedUrl(results.flat());
 }
 
 export async function getPodcastEpisodes(feedUrl: string): Promise<PodcastEpisode[]> {
@@ -65,4 +90,19 @@ function stripHtml(input: string) {
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function uniqueShowsByFeedUrl(shows: PodcastShow[]) {
+  const seenFeeds = new Set<string>();
+
+  return shows.filter(show => {
+    const feedKey = show.feedUrl.trim().toLowerCase();
+
+    if (!feedKey || seenFeeds.has(feedKey)) {
+      return false;
+    }
+
+    seenFeeds.add(feedKey);
+    return true;
+  });
 }
