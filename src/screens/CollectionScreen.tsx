@@ -7,6 +7,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
+import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, getCollectionById} from '../content/collections';
 import {Episode} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
@@ -22,7 +23,10 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
   const collection =
     getCollectionById(route.params.collectionId) ?? featuredCollection;
   const podcastDiscovery = usePodcastDiscovery(collection.audioSearchTerms);
-  const selectedShow = podcastDiscovery.data?.[0];
+  const selectedShow = selectCollectionPodcastShow(
+    collection,
+    podcastDiscovery.data,
+  );
   const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
   const episodes = useMemo(
     () => podcastEpisodes.data?.map(mapPodcastEpisodeToEpisode) ?? [],

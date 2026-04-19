@@ -15,6 +15,7 @@ import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {ProgressBar} from '../components/ProgressBar';
 import {ShelfCard} from '../components/ShelfCard';
+import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, scriptureCollections} from '../content/collections';
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {RootStackParamList} from '../navigation/types';
@@ -51,7 +52,10 @@ function getSanskritGreeting(): SanskritGreeting {
 
 export function HomeScreen({navigation}: HomeScreenProps) {
   const podcastDiscovery = usePodcastDiscovery(featuredCollection.audioSearchTerms);
-  const selectedShow = podcastDiscovery.data?.[0];
+  const selectedShow = selectCollectionPodcastShow(
+    featuredCollection,
+    podcastDiscovery.data,
+  );
   const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
   const liveEpisodes =
     podcastEpisodes.data?.slice(0, 6).map(mapPodcastEpisodeToEpisode) ?? [];

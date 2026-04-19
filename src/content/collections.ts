@@ -15,9 +15,11 @@ export const scriptureCollections: ScriptureCollection[] = [
     textProvider: 'gita-api',
     audioSearchTerms: [
       'bhagavad gita',
-      'swami sarvapriyananda gita',
       'gita sanskrit chanting',
+      'bhagavad gita english',
     ],
+    audioIncludeTerms: ['bhagavad gita', 'gita'],
+    audioExcludeTerms: ['vivekananda complete works', 'raja yoga', 'jnana yoga'],
     sections: [
       {id: 'gita-1', title: 'Chapters 1-6', subtitle: 'Karma and self-mastery'},
       {id: 'gita-2', title: 'Chapters 7-12', subtitle: 'Bhakti and knowledge'},
@@ -40,6 +42,8 @@ export const scriptureCollections: ScriptureCollection[] = [
       'tulsidas ramayan',
       'ramcharitmanas path',
     ],
+    audioIncludeTerms: ['ramcharitmanas', 'ram charit manas', 'tulsidas', 'ramayan'],
+    audioExcludeTerms: ['vivekananda', 'sarvapriyananda', 'vedanta'],
     sections: [
       {id: 'bal-kand', title: 'Bal Kand', subtitle: 'Origins and divine descent'},
       {id: 'ayodhya-kand', title: 'Ayodhya Kand', subtitle: 'Duty, exile, devotion'},
@@ -63,6 +67,8 @@ export const scriptureCollections: ScriptureCollection[] = [
       'hanuman chalisa podcast',
       'hanuman chalisa meaning',
     ],
+    audioIncludeTerms: ['hanuman chalisa', 'hanuman', 'chalisa'],
+    audioExcludeTerms: ['vivekananda', 'sarvapriyananda', 'vedanta'],
     sections: [
       {id: 'chalisa-doha', title: 'Opening Doha', subtitle: 'Invocation and intent'},
       {id: 'chalisa-chaupai', title: '40 Chaupais', subtitle: 'Core recitation'},
@@ -85,6 +91,8 @@ export const scriptureCollections: ScriptureCollection[] = [
       'chandi path bengali',
       'devi mahatmya bengali',
     ],
+    audioIncludeTerms: ['durga', 'saptashati', 'chandi', 'devi mahatmya', 'bengali'],
+    audioExcludeTerms: ['vivekananda', 'sarvapriyananda', 'vedanta'],
     sections: [
       {id: 'devi-kavach', title: 'Devi Kavach', subtitle: 'Protection and invocation'},
       {id: 'argala-stotram', title: 'Argala Stotram', subtitle: 'Opening praise'},

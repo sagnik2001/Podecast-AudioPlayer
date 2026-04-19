@@ -17,5 +17,7 @@ export type ScriptureCollection = {
   accent: string;
   textProvider: CollectionProvider;
   audioSearchTerms: string[];
+  audioIncludeTerms: string[];
+  audioExcludeTerms?: string[];
   sections: CollectionSection[];
 };
