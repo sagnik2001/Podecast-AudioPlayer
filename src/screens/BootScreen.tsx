@@ -1,50 +1,85 @@
 import React from 'react';
-import {Image, StatusBar, StyleSheet, Text} from 'react-native';
+import {StatusBar, StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {RootStackParamList} from '../navigation/types';
+import {BrandMark} from '../components/BrandMark';
 import {colors} from '../theme/colors';
 
 type BootScreenProps = NativeStackScreenProps<RootStackParamList, 'Boot'>;
 
-const splashArt = require('../assets/images/splash-art.png');
-
 export function BootScreen({navigation}: BootScreenProps) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.94);
-  const translateY = useSharedValue(18);
+  const markOpacity = useSharedValue(0);
+  const markScale = useSharedValue(0.82);
+  const textOpacity = useSharedValue(0);
+  const textY = useSharedValue(14);
+  const tagOpacity = useSharedValue(0);
 
   React.useEffect(() => {
-    opacity.value = withTiming(1, {duration: 420});
-    scale.value = withTiming(1, {duration: 560});
-    translateY.value = withTiming(0, {duration: 560});
+    markOpacity.value = withTiming(1, {duration: 500});
+    markScale.value = withTiming(1, {duration: 640});
+    textOpacity.value = withDelay(280, withTiming(1, {duration: 420}));
+    textY.value = withDelay(280, withTiming(0, {duration: 480}));
+    tagOpacity.value = withDelay(560, withTiming(1, {duration: 400}));
 
     const timer = setTimeout(() => {
       navigation.replace('Home');
-    }, 1150);
+    }, 1600);
 
     return () => clearTimeout(timer);
-  }, [navigation, opacity, scale, translateY]);
+  }, [navigation, markOpacity, markScale, tagOpacity, textOpacity, textY]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{scale: scale.value}, {translateY: translateY.value}],
+  const markStyle = useAnimatedStyle(() => ({
+    opacity: markOpacity.value,
+    transform: [{scale: markScale.value}],
+  }));
+
+  const textStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+    transform: [{translateY: textY.value}],
+  }));
+
+  const tagStyle = useAnimatedStyle(() => ({
+    opacity: tagOpacity.value,
   }));
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-      <Animated.View style={[styles.content, animatedStyle]}>
-        <Image source={splashArt} style={styles.art} />
-        <Text style={styles.brand}>PocketCast Lab</Text>
-        <Text style={styles.caption}>Native audio. Offline-first. Kill-proof resume.</Text>
-      </Animated.View>
+
+      <View style={styles.content}>
+        <Animated.View style={markStyle}>
+          <BrandMark size={88} />
+        </Animated.View>
+
+        <Animated.View style={[styles.copy, textStyle]}>
+          <Text style={styles.brand}>Svara</Text>
+          <Text style={styles.brandDevanagari}>स्वर</Text>
+        </Animated.View>
+
+        <Animated.View style={[styles.tagWrap, tagStyle]}>
+          <View style={styles.tagDividerLeft} />
+          <Text style={styles.tag}>स्वाध्याय</Text>
+          <View style={styles.tagDividerRight} />
+        </Animated.View>
+
+        <Animated.Text style={[styles.tagEnglish, tagStyle]}>
+          Sacred audio · Reading · Reflection
+        </Animated.Text>
+      </View>
+
+      <View style={styles.footer}>
+        <View style={styles.footerDot} />
+        <View style={[styles.footerDot, styles.footerDotActive]} />
+        <View style={styles.footerDot} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -58,27 +93,73 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: 32,
   },
-  art: {
-    borderRadius: 8,
-    height: 220,
-    marginBottom: 26,
-    width: 220,
+  copy: {
+    alignItems: 'center',
+    marginTop: 28,
   },
   brand: {
     color: colors.ink,
-    fontSize: 30,
-    fontWeight: '900',
-    letterSpacing: 0,
+    fontSize: 42,
+    fontWeight: '800',
+    letterSpacing: -1,
   },
-  caption: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0,
-    lineHeight: 20,
+  brandDevanagari: {
+    color: colors.brand,
+    fontSize: 18,
+    fontWeight: '400',
+    letterSpacing: 3,
+    marginTop: 4,
+    opacity: 0.8,
+  },
+  tagWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24,
+  },
+  tagDividerLeft: {
+    backgroundColor: colors.brandBorder,
+    flex: 1,
+    height: 1,
+    maxWidth: 40,
+  },
+  tagDividerRight: {
+    backgroundColor: colors.brandBorder,
+    flex: 1,
+    height: 1,
+    maxWidth: 40,
+  },
+  tag: {
+    color: colors.brand,
+    fontSize: 16,
+    fontWeight: '500',
+    letterSpacing: 2,
+  },
+  tagEnglish: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.8,
     marginTop: 10,
     textAlign: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
+  footerDot: {
+    backgroundColor: colors.faint,
+    borderRadius: 999,
+    height: 5,
+    width: 5,
+  },
+  footerDotActive: {
+    backgroundColor: colors.brand,
+    width: 18,
   },
 });

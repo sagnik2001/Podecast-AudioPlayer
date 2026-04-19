@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Outer thin ring -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M60,6 A54,54 0 0 1 114,60 A54,54 0 0 1 60,114 A54,54 0 0 1 6,60 A54,54 0 0 1 60,6 Z"
+        android:strokeColor="#E0962A"
+        android:strokeWidth="0.8"
+        android:strokeAlpha="0.4" />
+
+    <!-- 8 lotus petals — primary (N, E, S, W) -->
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="0">
+        <path
+            android:fillColor="#E0962A"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="90">
+        <path
+            android:fillColor="#E0962A"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="180">
+        <path
+            android:fillColor="#E0962A"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="270">
+        <path
+            android:fillColor="#E0962A"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+
+    <!-- 8 lotus petals — secondary (NE, SE, SW, NW) at 60% opacity -->
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="45">
+        <path
+            android:fillColor="#E0962A"
+            android:fillAlpha="0.6"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="135">
+        <path
+            android:fillColor="#E0962A"
+            android:fillAlpha="0.6"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="225">
+        <path
+            android:fillColor="#E0962A"
+            android:fillAlpha="0.6"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+    <group
+        android:pivotX="60"
+        android:pivotY="60"
+        android:rotation="315">
+        <path
+            android:fillColor="#E0962A"
+            android:fillAlpha="0.6"
+            android:pathData="M60,59 C52,44 54,20 60,11 C66,20 68,44 60,59" />
+    </group>
+
+    <!-- Cover petal bases with dark circle -->
+    <path
+        android:fillColor="#131110"
+        android:pathData="M60,40 A20,20 0 0 1 80,60 A20,20 0 0 1 60,80 A20,20 0 0 1 40,60 A20,20 0 0 1 60,40 Z" />
+
+    <!-- Inner saffron ring -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M60,42 A18,18 0 0 1 78,60 A18,18 0 0 1 60,78 A18,18 0 0 1 42,60 A18,18 0 0 1 60,42 Z"
+        android:strokeColor="#E0962A"
+        android:strokeWidth="1.2" />
+
+    <!-- Center dot -->
+    <path
+        android:fillColor="#E0962A"
+        android:pathData="M60,55 A5,5 0 0 1 65,60 A5,5 0 0 1 60,65 A5,5 0 0 1 55,60 A5,5 0 0 1 60,55 Z" />
+
+</vector>

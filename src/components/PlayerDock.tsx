@@ -68,36 +68,44 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.glow} />
       <View style={styles.row}>
-        <CoverArt accent={episode.accent} imageUrl={episode.imageUrl} phase="Live" size={54} />
+        <CoverArt accent={episode.accent} imageUrl={episode.imageUrl} phase="Live" size={48} />
         <View style={styles.meta}>
-          <Text numberOfLines={1} style={styles.label}>
-            From {episode.show}
-          </Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, isPlaying && styles.statusDotLive]} />
+            <Text style={styles.label}>
+              {isPlaying ? 'Now playing' : 'Up next'}
+            </Text>
+          </View>
           <Text numberOfLines={1} style={styles.title}>
             {episode.title}
           </Text>
+          <Text numberOfLines={1} style={styles.show}>
+            {episode.show}
+          </Text>
         </View>
         <TouchableOpacity
-          activeOpacity={0.75}
+          activeOpacity={0.78}
           disabled={!isCurrentTrack}
           onPress={onRewind}
           style={[styles.skipButton, !isCurrentTrack && styles.disabledButton]}>
-          <Text style={styles.skipText}>-15</Text>
+          <Text style={styles.skipText}>15</Text>
+          <Text style={styles.skipUnit}>sec</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          activeOpacity={0.75}
+          activeOpacity={0.82}
           disabled={!canPlay || isBusy}
           onPress={onTogglePlayback}
           style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
           <Text style={styles.playText}>
-            {!canPlay ? 'No audio' : isPlaying ? 'Pause' : 'Play'}
+            {!canPlay ? '…' : isPlaying ? '❚❚' : '▶'}
           </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.progressRow}>
         <Text style={styles.time}>{positionLabel}</Text>
-        <ProgressBar progress={progressRatio} height={4} />
+        <ProgressBar accent={colors.brand} height={3} progress={progressRatio} />
         <Text style={styles.time}>{durationLabel}</Text>
       </View>
     </View>
@@ -172,11 +180,27 @@ function parseDurationToSeconds(duration: unknown) {
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: '#17221d',
-    borderColor: '#284a39',
-    borderRadius: 8,
+    backgroundColor: colors.surfaceRaised,
+    borderColor: colors.lineSoft,
+    borderRadius: 22,
     borderWidth: 1,
-    padding: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    shadowColor: colors.black,
+    shadowOffset: {height: 18, width: 0},
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+  },
+  glow: {
+    backgroundColor: colors.brand,
+    borderRadius: 999,
+    height: 80,
+    left: -20,
+    opacity: 0.06,
+    position: 'absolute',
+    top: -30,
+    width: 80,
   },
   row: {
     alignItems: 'center',
@@ -187,60 +211,91 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  statusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 4,
+  },
+  statusDot: {
+    backgroundColor: colors.dim,
+    borderRadius: 999,
+    height: 6,
+    width: 6,
+  },
+  statusDotLive: {
+    backgroundColor: colors.brandBright,
+  },
   label: {
     color: colors.muted,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0,
-    marginBottom: 3,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
   },
   title: {
     color: colors.ink,
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.1,
+  },
+  show: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
   },
   skipButton: {
     alignItems: 'center',
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 8,
-    height: 42,
+    backgroundColor: colors.surfaceHigh,
+    borderRadius: 14,
+    height: 44,
     justifyContent: 'center',
-    width: 46,
+    width: 44,
   },
   skipText: {
     color: colors.ink,
     fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 0,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    lineHeight: 14,
+  },
+  skipUnit: {
+    color: colors.dim,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    marginTop: 1,
+    textTransform: 'uppercase',
   },
   playButton: {
     alignItems: 'center',
     backgroundColor: colors.brand,
-    borderRadius: 8,
-    height: 46,
+    borderRadius: 999,
+    height: 48,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    width: 48,
   },
   disabledButton: {
     opacity: 0.46,
   },
   playText: {
     color: colors.background,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '900',
-    letterSpacing: 0,
+    marginLeft: 1,
   },
   progressRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10,
     marginTop: 12,
+    paddingHorizontal: 4,
   },
   time: {
     color: colors.dim,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0,
+    letterSpacing: 0.4,
   },
 });

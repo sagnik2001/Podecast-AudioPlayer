@@ -19,11 +19,11 @@ export type Episode = {
 
 export const featuredEpisode: Episode = {
   id: 'phase-3',
-  title: 'Kill-proof rehydration',
-  show: 'Native Playback Lab',
+  title: 'The discipline of attention',
+  show: 'Gita Study',
   description:
-    'Restore queue, seek position, and player state in the right order after a cold app reopen.',
-  tag: 'Persistence',
+    'A focused listening session with verse, translation, and notes prepared for review.',
+  tag: 'Reading',
   duration: '38 min',
   published: 'Today',
   progress: 0.62,
@@ -36,10 +36,10 @@ export const featuredEpisode: Episode = {
 export const episodes: Episode[] = [
   {
     id: 'phase-1',
-    title: 'New Architecture setup',
-    show: 'Project Foundations',
-    description: 'New project init, Gradle flags, JSI readiness, and folder structure.',
-    tag: 'Setup',
+    title: 'Morning recitation',
+    show: 'Sanskrit Foundations',
+    description: 'Slow audio with transliteration, repetition, and a clean reading pane.',
+    tag: 'Audio',
     duration: '24 min',
     published: 'Apr 18',
     progress: 0.9,
@@ -50,10 +50,10 @@ export const episodes: Episode[] = [
   },
   {
     id: 'phase-2',
-    title: 'Native audio engine',
-    show: 'TrackPlayer Internals',
-    description: 'Player service setup, queue hydration, background session, and controls.',
-    tag: 'Audio',
+    title: 'Commentary notes',
+    show: 'Study Companion',
+    description: 'Short explanation blocks saved beside the current audio position.',
+    tag: 'Notes',
     duration: '31 min',
     published: 'Next',
     progress: 0.46,
@@ -64,9 +64,9 @@ export const episodes: Episode[] = [
   featuredEpisode,
   {
     id: 'phase-4',
-    title: 'Offline library',
-    show: 'Downloads and Database',
-    description: 'Blob downloads, local file playback, WatermelonDB queries, and sync state.',
+    title: 'Offline chapter pack',
+    show: 'Library',
+    description: 'Downloaded audio, translation, and commentary ready without network.',
     tag: 'Offline',
     duration: '42 min',
     published: 'Queued',
@@ -77,10 +77,10 @@ export const episodes: Episode[] = [
   },
   {
     id: 'phase-5',
-    title: 'Detox reopen test',
-    show: 'Confidence Suite',
-    description: 'Force kill, reopen, assert restored timestamp, and verify lock screen controls.',
-    tag: 'Testing',
+    title: 'Resume from memory',
+    show: 'Listening History',
+    description: 'Return to the exact verse, timestamp, and reading mode after reopening.',
+    tag: 'Resume',
     duration: '29 min',
     published: 'Later',
     progress: 0.05,
@@ -91,13 +91,13 @@ export const episodes: Episode[] = [
 ];
 
 export const libraryStats = [
-  {label: 'Queued', value: '12', tone: episodeAccents[0]},
+  {label: 'Sessions', value: '12', tone: episodeAccents[0]},
   {label: 'Offline', value: '5', tone: episodeAccents[3]},
-  {label: 'Synced', value: '86%', tone: episodeAccents[2]},
+  {label: 'Read', value: '86%', tone: episodeAccents[2]},
 ];
 
 export const shelves = [
-  {title: 'New Architecture', count: '5 episodes', accent: episodeAccents[0]},
-  {title: 'Native Audio', count: '3 labs', accent: episodeAccents[1]},
-  {title: 'Offline Mode', count: '4 tasks', accent: episodeAccents[2]},
+  {title: 'Bhagavad Gita', count: '18 chapters', accent: episodeAccents[0]},
+  {title: 'Sanskrit Basics', count: '12 readings', accent: episodeAccents[1]},
+  {title: 'Saved Notes', count: '8 reflections', accent: episodeAccents[2]},
 ];

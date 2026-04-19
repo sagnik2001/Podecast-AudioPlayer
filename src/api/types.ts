@@ -41,6 +41,7 @@ export type Rss2JsonItem = {
   link?: string;
   author?: string;
   thumbnail?: string;
+  image?: string;
   description?: string;
   content?: string;
   enclosure?: Rss2JsonEnclosure;

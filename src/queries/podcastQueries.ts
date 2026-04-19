@@ -6,19 +6,19 @@ import {
   searchPodcastsAcrossTerms,
 } from '../api/podcastApi';
 
-export const defaultPodcastSearchTerm = 'technology';
+export const defaultPodcastSearchTerm = 'bhagavad gita';
 
 export const defaultPodcastDiscoveryTerms = [
-  'technology',
-  'business',
-  'science',
-  'news',
-  'design',
-  'startup',
-  'health',
-  'history',
-  'music',
-  'education',
+  'bhagavad gita',
+  'gita',
+  'vedanta',
+  'sanskrit',
+  'krishna',
+  'hindu philosophy',
+  'spiritual wisdom',
+  'meditation',
+  'yoga philosophy',
+  'indian scriptures',
 ] as const;
 
 export const podcastQueryKeys = {
@@ -55,7 +55,7 @@ export function usePodcastDiscovery(
     queryKey: podcastQueryKeys.discovery(discoveryTerms),
     queryFn: () =>
       searchPodcastsAcrossTerms(discoveryTerms, {
-        limit: 8,
+        limit: 12,
       }),
     staleTime: searchStaleTime,
   });
