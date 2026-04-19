@@ -7,4 +7,8 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# Add any project specific keep options here:
+# Keep app entry points and media services referenced by Android manifests and
+# React Native background playback. Library consumer rules still handle most
+# React Native/native-module internals.
+-keep class com.podcastplayer.** { *; }
+-keep class com.doublesymmetry.trackplayer.service.** { *; }
