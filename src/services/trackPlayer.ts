@@ -60,6 +60,11 @@ export async function seekBy(seconds: number) {
   await TrackPlayer.seekBy(seconds);
 }
 
+export async function seekTo(seconds: number) {
+  await setupPodcastPlayer();
+  await TrackPlayer.seekTo(seconds);
+}
+
 export function isPlaybackStatePlaying(state?: State) {
   return state === State.Playing || state === State.Buffering;
 }
@@ -75,6 +80,8 @@ function getPlayableQueue(queue: Episode[], selectedEpisode: Episode) {
 }
 
 function toTrack(episode: Episode): AddTrack {
+  const duration = parseDurationToSeconds(episode.duration);
+
   return {
     id: episode.id,
     url: episode.audioUrl as string,
@@ -83,7 +90,48 @@ function toTrack(episode: Episode): AddTrack {
     album: 'PocketCast Lab',
     artwork: episode.imageUrl,
     description: episode.description,
+    duration: duration > 0 ? duration : undefined,
   };
+}
+
+function parseDurationToSeconds(duration: unknown) {
+  if (typeof duration === 'number') {
+    return Number.isFinite(duration) ? duration : 0;
+  }
+
+  if (typeof duration !== 'string') {
+    return 0;
+  }
+
+  const value = duration.trim();
+
+  if (!value) {
+    return 0;
+  }
+
+  if (value.includes(':')) {
+    return value
+      .split(':')
+      .map(part => Number.parseInt(part, 10))
+      .filter(part => !Number.isNaN(part))
+      .reduce((seconds, part) => seconds * 60 + part, 0);
+  }
+
+  const numericValue = Number.parseFloat(value);
+
+  if (Number.isNaN(numericValue)) {
+    return 0;
+  }
+
+  if (value.toLowerCase().includes('hour')) {
+    return numericValue * 60 * 60;
+  }
+
+  if (value.toLowerCase().includes('min')) {
+    return numericValue * 60;
+  }
+
+  return numericValue;
 }
 
 async function setupPlayer() {
@@ -115,6 +163,7 @@ async function setupPlayer() {
     notificationCapabilities: [
       Capability.Play,
       Capability.Pause,
+      Capability.SeekTo,
       Capability.SkipToNext,
       Capability.SkipToPrevious,
     ],

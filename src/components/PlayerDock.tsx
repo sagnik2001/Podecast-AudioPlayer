@@ -9,11 +9,12 @@ import {Episode} from '../data/episodes';
 import {useEpisodePlayback} from '../hooks/useEpisodePlayback';
 import {
   seekBy,
+  seekTo,
 } from '../services/trackPlayer';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
 import {PlayPauseIcon} from './PlayPauseIcon';
-import {ProgressBar} from './ProgressBar';
+import {SeekBar} from './SeekBar';
 
 type PlayerDockProps = {
   episode: Episode;
@@ -37,19 +38,6 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
     isPlaying,
     togglePlayback,
   } = useEpisodePlayback(displayedEpisode, queue);
-  const progressRatio = useMemo(() => {
-    if (!isCurrentTrack || progress.duration <= 0) {
-      return displayedEpisode.progress;
-    }
-
-    return progress.position / progress.duration;
-  }, [
-    displayedEpisode.progress,
-    isCurrentTrack,
-    progress.duration,
-    progress.position,
-  ]);
-
   const positionLabel = isCurrentTrack
     ? formatPlaybackTime(progress.position)
     : formatEpisodeStartTime(displayedEpisode.progress, displayedEpisode.duration);
@@ -63,6 +51,14 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
     }
 
     await seekBy(-15);
+  };
+
+  const onSeek = async (seconds: number) => {
+    if (!isCurrentTrack || isBusy) {
+      return;
+    }
+
+    await seekTo(seconds);
   };
 
   return (
@@ -107,7 +103,14 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
       </View>
       <View style={styles.progressRow}>
         <Text style={styles.time}>{positionLabel}</Text>
-        <ProgressBar accent={colors.brand} height={3} progress={progressRatio} />
+        <SeekBar
+          accent={colors.brand}
+          buffered={progress.buffered}
+          duration={isCurrentTrack ? progress.duration : 0}
+          height={6}
+          onSeek={onSeek}
+          position={isCurrentTrack ? progress.position : 0}
+        />
         <Text style={styles.time}>{durationLabel}</Text>
       </View>
     </View>

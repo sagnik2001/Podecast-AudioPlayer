@@ -17,7 +17,7 @@ export async function PlaybackService() {
     TrackPlayer.skipToPrevious().catch(() => undefined);
   });
 
-  TrackPlayer.addEventListener(Event.RemoteSeek, (event) => {
-    TrackPlayer.seekTo(event.position);
+  TrackPlayer.addEventListener(Event.RemoteSeek, event => {
+    TrackPlayer.seekTo(event.position).catch(() => undefined);
   });
 }
