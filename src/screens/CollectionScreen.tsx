@@ -37,8 +37,8 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
   const realDataError = podcastDiscovery.error ?? podcastEpisodes.error;
 
   const renderEpisode = useCallback<ListRenderItem<Episode>>(
-    ({item}) => <EpisodeCard compact episode={item} />,
-    [],
+    ({item}) => <EpisodeCard compact episode={item} queue={episodes} />,
+    [episodes],
   );
 
   const renderHeader = useCallback(

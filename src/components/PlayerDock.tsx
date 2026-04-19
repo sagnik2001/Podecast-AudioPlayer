@@ -1,19 +1,18 @@
-import React, {useMemo, useState} from 'react';
+import React, {useMemo} from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {
   useActiveTrack,
-  usePlaybackState,
   useProgress,
 } from 'react-native-track-player';
 
 import {Episode} from '../data/episodes';
+import {useEpisodePlayback} from '../hooks/useEpisodePlayback';
 import {
-  isPlaybackStatePlaying,
   seekBy,
-  toggleEpisodePlayback,
 } from '../services/trackPlayer';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
+import {PlayPauseIcon} from './PlayPauseIcon';
 import {ProgressBar} from './ProgressBar';
 
 type PlayerDockProps = {
@@ -22,41 +21,41 @@ type PlayerDockProps = {
 };
 
 export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
-  const [isBusy, setIsBusy] = useState(false);
-  const playbackState = usePlaybackState();
   const activeTrack = useActiveTrack();
+  const displayedEpisode = useMemo(
+    () =>
+      queue.find(item => item.id === activeTrack?.id) ??
+      mapActiveTrackToEpisode(activeTrack) ??
+      episode,
+    [activeTrack, episode, queue],
+  );
   const progress = useProgress(500);
-  const isCurrentTrack = activeTrack?.id === episode.id;
-  const isPlaying = isCurrentTrack && isPlaybackStatePlaying(playbackState.state);
-  const canPlay = Boolean(episode.audioUrl);
+  const {
+    canPlay,
+    isBusy,
+    isCurrentTrack,
+    isPlaying,
+    togglePlayback,
+  } = useEpisodePlayback(displayedEpisode, queue);
   const progressRatio = useMemo(() => {
     if (!isCurrentTrack || progress.duration <= 0) {
-      return episode.progress;
+      return displayedEpisode.progress;
     }
 
     return progress.position / progress.duration;
-  }, [episode.progress, isCurrentTrack, progress.duration, progress.position]);
+  }, [
+    displayedEpisode.progress,
+    isCurrentTrack,
+    progress.duration,
+    progress.position,
+  ]);
 
   const positionLabel = isCurrentTrack
     ? formatPlaybackTime(progress.position)
-    : formatEpisodeStartTime(episode.progress, episode.duration);
+    : formatEpisodeStartTime(displayedEpisode.progress, displayedEpisode.duration);
   const durationLabel = isCurrentTrack
     ? formatPlaybackTime(progress.duration)
-    : formatEpisodeDuration(episode.duration);
-
-  const onTogglePlayback = async () => {
-    if (!canPlay || isBusy) {
-      return;
-    }
-
-    setIsBusy(true);
-
-    try {
-      await toggleEpisodePlayback(episode, isPlaying, queue);
-    } finally {
-      setIsBusy(false);
-    }
-  };
+    : formatEpisodeDuration(displayedEpisode.duration);
 
   const onRewind = async () => {
     if (!isCurrentTrack || isBusy) {
@@ -70,7 +69,12 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
     <View style={styles.wrap}>
       <View style={styles.glow} />
       <View style={styles.row}>
-        <CoverArt accent={episode.accent} imageUrl={episode.imageUrl} phase="Live" size={48} />
+        <CoverArt
+          accent={displayedEpisode.accent}
+          imageUrl={displayedEpisode.imageUrl}
+          phase="Live"
+          size={48}
+        />
         <View style={styles.meta}>
           <View style={styles.statusRow}>
             <View style={[styles.statusDot, isPlaying && styles.statusDotLive]} />
@@ -79,10 +83,10 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
             </Text>
           </View>
           <Text numberOfLines={1} style={styles.title}>
-            {episode.title}
+            {displayedEpisode.title}
           </Text>
           <Text numberOfLines={1} style={styles.show}>
-            {episode.show}
+            {displayedEpisode.show}
           </Text>
         </View>
         <TouchableOpacity
@@ -96,11 +100,9 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
         <TouchableOpacity
           activeOpacity={0.82}
           disabled={!canPlay || isBusy}
-          onPress={onTogglePlayback}
+          onPress={togglePlayback}
           style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
-          <Text style={styles.playText}>
-            {!canPlay ? '…' : isPlaying ? '❚❚' : '▶'}
-          </Text>
+          <PlayPauseIcon color={colors.background} isBusy={isBusy} isPlaying={isPlaying} />
         </TouchableOpacity>
       </View>
       <View style={styles.progressRow}>
@@ -176,6 +178,39 @@ function parseDurationToSeconds(duration: unknown) {
   return value.toLowerCase().includes('hour')
     ? numericValue * 60 * 60
     : numericValue * 60;
+}
+
+function mapActiveTrackToEpisode(
+  track: ReturnType<typeof useActiveTrack>,
+): Episode | undefined {
+  if (!track?.id) {
+    return undefined;
+  }
+
+  const artwork = typeof track.artwork === 'string' ? track.artwork : undefined;
+  const audioUrl = typeof track.url === 'string' ? track.url : undefined;
+
+  return {
+    accent: colors.brand,
+    audioUrl,
+    description:
+      typeof track.description === 'string' ? track.description : '',
+    duration: 'Podcast',
+    id: String(track.id),
+    imageUrl: artwork,
+    phase: 'Live',
+    progress: 0,
+    published: 'Now',
+    queuePosition: 0,
+    show:
+      typeof track.artist === 'string'
+        ? track.artist
+        : typeof track.album === 'string'
+          ? track.album
+          : 'Now playing',
+    tag: 'Playing',
+    title: typeof track.title === 'string' ? track.title : 'Current audio',
+  };
 }
 
 const styles = StyleSheet.create({

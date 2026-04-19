@@ -247,7 +247,13 @@ export function HomeScreen({navigation}: HomeScreenProps) {
         {displayEpisodes.length > 0 ? (
           displayEpisodes
             .slice(0, 4)
-            .map(episode => <EpisodeCard episode={episode} key={episode.id} />)
+            .map(episode => (
+              <EpisodeCard
+                episode={episode}
+                key={episode.id}
+                queue={displayEpisodes}
+              />
+            ))
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyOm}>ॐ</Text>

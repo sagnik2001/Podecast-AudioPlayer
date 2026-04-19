@@ -9,7 +9,10 @@ import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {Episode} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
-import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
+import {
+  CollectionAudioResult,
+  useCollectionAudioLibrary,
+} from '../queries/collectionQueries';
 import {colors} from '../theme/colors';
 
 type LibraryScreenProps = NativeStackScreenProps<RootStackParamList, 'Library'>;
@@ -26,17 +29,49 @@ const filters: {id: LibraryFilter; label: string}[] = [
   {id: 'fresh', label: 'Fresh'},
 ];
 
+function isCollectionAudioResult(
+  result: CollectionAudioResult | undefined,
+): result is CollectionAudioResult {
+  return Boolean(result);
+}
+
 export function LibraryScreen({navigation}: LibraryScreenProps) {
   const [visibleEpisodeCount, setVisibleEpisodeCount] = useState(initialEpisodeCount);
   const [activeFilter, setActiveFilter] = useState<LibraryFilter>('all');
-  const podcastDiscovery = usePodcastDiscovery();
-  const selectedShow = podcastDiscovery.data?.[0];
-  const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
-  const liveEpisodes =
-    podcastEpisodes.data?.map(mapPodcastEpisodeToEpisode) ?? [];
-  const displayEpisodes = liveEpisodes;
-  const isLoadingRealData = podcastDiscovery.isLoading || podcastEpisodes.isLoading;
-  const realDataError = podcastDiscovery.error ?? podcastEpisodes.error;
+  const collectionAudioQueries = useCollectionAudioLibrary();
+  const collectionAudioResults = collectionAudioQueries
+    .map(query => query.data)
+    .filter(isCollectionAudioResult);
+  const displayEpisodes = useMemo(
+    () =>
+      collectionAudioResults
+        .flatMap(result =>
+          result.episodes.map((podcastEpisode, index) => {
+            const episode = mapPodcastEpisodeToEpisode(podcastEpisode, index);
+
+            return {
+              ...episode,
+              accent: result.collection.accent,
+              id: `${result.collection.id}-${episode.id}`,
+              phase: result.collection.symbol,
+              queuePosition: index + 1,
+              show: result.collection.title,
+              tag: result.show?.title ?? episode.tag,
+            };
+          }),
+        )
+        .map((episode, index) => ({
+          ...episode,
+          queuePosition: index + 1,
+        })),
+    [collectionAudioResults],
+  );
+  const isLoadingRealData = collectionAudioQueries.some(query => query.isLoading);
+  const isFetchingRealData = collectionAudioQueries.some(query => query.isFetching);
+  const realDataError = collectionAudioQueries.find(query => query.error)?.error;
+  const loadedCollectionCount = collectionAudioResults.filter(
+    result => result.episodes.length > 0,
+  ).length;
   const orderedEpisodes = useMemo(
     () =>
       displayEpisodes
@@ -81,7 +116,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
 
   useEffect(() => {
     setVisibleEpisodeCount(initialEpisodeCount);
-  }, [selectedShow?.feedUrl, activeFilter]);
+  }, [activeFilter, displayEpisodes.length]);
 
   const loadMoreEpisodes = useCallback(() => {
     if (!hasMoreEpisodes) {
@@ -94,8 +129,8 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
   }, [hasMoreEpisodes, filteredEpisodes.length]);
 
   const renderEpisode = useCallback<ListRenderItem<Episode>>(
-    ({item}) => <EpisodeCard compact episode={item} />,
-    [],
+    ({item}) => <EpisodeCard compact episode={item} queue={orderedEpisodes} />,
+    [orderedEpisodes],
   );
 
   const renderHeader = useCallback(
@@ -118,8 +153,8 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           <Text style={styles.eyebrow}>✦ Your Sangha ✦</Text>
           <Text style={styles.title}>Sacred Library</Text>
           <Text style={styles.subtitle}>
-            {selectedShow
-              ? `Streaming from ${selectedShow.title}`
+            {loadedCollectionCount > 0
+              ? `Streaming from ${loadedCollectionCount} collections`
               : isLoadingRealData
                 ? 'Finding spiritual feeds and recitations.'
                 : 'No live source available right now.'}
@@ -187,8 +222,8 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
       activeFilter,
       filteredEpisodes.length,
       isLoadingRealData,
+      loadedCollectionCount,
       navigation,
-      selectedShow,
       totals.inProgress,
       totals.playable,
       totals.sessions,
@@ -225,7 +260,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
         <Text style={styles.footerText}>
           {hasMoreEpisodes
             ? 'Loading more episodes…'
-            : podcastEpisodes.isFetching
+            : isFetchingRealData
               ? 'Refreshing feed'
               : visibleEpisodes.length > 0
                 ? 'You’ve reached the end'
@@ -233,7 +268,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
         </Text>
       </View>
     ),
-    [hasMoreEpisodes, podcastEpisodes.isFetching, visibleEpisodes.length],
+    [hasMoreEpisodes, isFetchingRealData, visibleEpisodes.length],
   );
 
   return (
@@ -242,7 +277,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
       <FlashList
         contentContainerStyle={styles.content}
         data={visibleEpisodes}
-        extraData={{hasMoreEpisodes, isFetching: podcastEpisodes.isFetching}}
+        extraData={{hasMoreEpisodes, isFetching: isFetchingRealData}}
         keyExtractor={item => item.id}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}

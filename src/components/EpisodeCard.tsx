@@ -2,21 +2,32 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 import {Episode} from '../data/episodes';
+import {useEpisodePlayback} from '../hooks/useEpisodePlayback';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
+import {PlayPauseIcon} from './PlayPauseIcon';
 import {ProgressBar} from './ProgressBar';
 
 type EpisodeCardProps = {
   episode: Episode;
   compact?: boolean;
+  queue?: Episode[];
 };
 
-export function EpisodeCard({episode, compact = false}: EpisodeCardProps) {
+export function EpisodeCard({
+  episode,
+  compact = false,
+  queue = [episode],
+}: EpisodeCardProps) {
   const hasProgress = episode.progress > 0.02 && episode.progress < 0.98;
   const showFooter = hasProgress || Boolean(episode.tag) || Boolean(episode.duration);
+  const {canPlay, isBusy, isPlaying, togglePlayback} = useEpisodePlayback(
+    episode,
+    queue,
+  );
 
   return (
-    <TouchableOpacity activeOpacity={0.86} style={styles.card}>
+    <View style={styles.card}>
       <CoverArt
         accent={episode.accent}
         imageUrl={episode.imageUrl}
@@ -61,10 +72,14 @@ export function EpisodeCard({episode, compact = false}: EpisodeCardProps) {
           </View>
         ) : null}
       </View>
-      <View style={styles.playButton}>
-        <Text style={styles.playGlyph}>▶</Text>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.82}
+        disabled={!canPlay || isBusy}
+        onPress={togglePlayback}
+        style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
+        <PlayPauseIcon color={colors.background} isBusy={isBusy} isPlaying={isPlaying} size="sm" />
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -163,7 +178,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
-  playGlyph: {
+  disabledButton: {
+    opacity: 0.48,
+  },
+  playText: {
     color: colors.background,
     fontSize: 13,
     fontWeight: '900',
