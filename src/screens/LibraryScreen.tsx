@@ -242,7 +242,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
         </Text>
         <Text style={styles.emptyBody}>
           {isLoadingRealData
-            ? 'Fetching iTunes results and parsing the selected RSS feed.'
+            ? 'Fetching Apple Podcasts and Internet Archive sources, then loading playable audio.'
             : activeFilter !== 'all'
               ? 'Try a different filter or check back after listening more.'
               : realDataError instanceof Error

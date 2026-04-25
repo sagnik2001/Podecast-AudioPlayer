@@ -12,7 +12,7 @@ export function mapPodcastEpisodeToEpisode(
     show: episode.showTitle,
     description: episode.description || 'No episode notes available yet.',
     tag: episode.audioUrl ? 'Playable' : 'Metadata',
-    duration: formatDurationLabel(episode.duration),
+    duration: normalizeDurationValue(episode.duration),
     published: formatPublishedDate(episode.publishedAt),
     progress: 0,
     phase: `Ep ${index + 1}`,
@@ -23,9 +23,9 @@ export function mapPodcastEpisodeToEpisode(
   };
 }
 
-function formatDurationLabel(value?: number | string) {
+function normalizeDurationValue(value?: number | string) {
   if (typeof value === 'number') {
-    return Number.isFinite(value) ? formatSeconds(value) : 'Podcast';
+    return Number.isFinite(value) ? String(value) : 'Podcast';
   }
 
   if (!value) {
@@ -38,25 +38,7 @@ function formatDurationLabel(value?: number | string) {
     return 'Podcast';
   }
 
-  if (duration.includes(':')) {
-    return duration;
-  }
-
-  const numericValue = Number.parseFloat(duration);
-
-  if (Number.isNaN(numericValue)) {
-    return duration;
-  }
-
-  return `${Math.round(numericValue)} min`;
-}
-
-function formatSeconds(value: number) {
-  const totalSeconds = Math.floor(value);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  return duration;
 }
 
 function formatPublishedDate(value?: string) {

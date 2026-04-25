@@ -50,7 +50,9 @@ export function EpisodeCard({
           <View style={styles.metaRow}>
             <View style={styles.metaPill}>
               <View style={styles.metaDot} />
-              <Text style={styles.metaText}>{episode.duration || 'Audio'}</Text>
+              <Text style={styles.metaText}>
+                {formatCardDuration(episode.duration)}
+              </Text>
             </View>
             {episode.downloaded ? (
               <View style={[styles.metaPill, styles.metaPillSoft]}>
@@ -81,6 +83,60 @@ export function EpisodeCard({
       </TouchableOpacity>
     </View>
   );
+}
+
+function formatCardDuration(duration?: string) {
+  if (!duration || duration === 'Podcast') {
+    return 'Audio';
+  }
+
+  const totalSeconds = parseDurationToSeconds(duration);
+
+  if (totalSeconds <= 0) {
+    return duration;
+  }
+
+  const totalMinutes = Math.max(1, Math.round(totalSeconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  return `${totalMinutes} min`;
+}
+
+function parseDurationToSeconds(duration: string) {
+  const value = duration.trim();
+
+  if (!value) {
+    return 0;
+  }
+
+  if (value.includes(':')) {
+    return value
+      .split(':')
+      .map(part => Number.parseInt(part, 10))
+      .filter(part => !Number.isNaN(part))
+      .reduce((seconds, part) => seconds * 60 + part, 0);
+  }
+
+  const numericValue = Number.parseFloat(value);
+
+  if (Number.isNaN(numericValue)) {
+    return 0;
+  }
+
+  if (value.toLowerCase().includes('hour')) {
+    return numericValue * 60 * 60;
+  }
+
+  if (value.toLowerCase().includes('min')) {
+    return numericValue * 60;
+  }
+
+  return numericValue;
 }
 
 const styles = StyleSheet.create({

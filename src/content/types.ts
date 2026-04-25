@@ -1,3 +1,5 @@
+import type {PodcastShow} from '../api/types';
+
 export type CollectionProvider = 'gita-api' | 'wikisource' | 'local-json';
 
 export type CollectionSection = {
@@ -16,6 +18,7 @@ export type ScriptureCollection = {
   symbol: string;
   accent: string;
   textProvider: CollectionProvider;
+  curatedPodcastShow?: PodcastShow;
   audioSearchTerms: string[];
   audioIncludeTerms: string[];
   audioExcludeTerms?: string[];

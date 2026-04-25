@@ -178,9 +178,15 @@ function parseDurationToSeconds(duration: unknown) {
     return 0;
   }
 
-  return value.toLowerCase().includes('hour')
-    ? numericValue * 60 * 60
-    : numericValue * 60;
+  if (value.toLowerCase().includes('hour')) {
+    return numericValue * 60 * 60;
+  }
+
+  if (value.toLowerCase().includes('min')) {
+    return numericValue * 60;
+  }
+
+  return numericValue;
 }
 
 function mapActiveTrackToEpisode(

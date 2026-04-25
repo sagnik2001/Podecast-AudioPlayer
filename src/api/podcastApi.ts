@@ -2,6 +2,12 @@ import {XMLParser} from 'fast-xml-parser';
 
 import {apiGet, apiText, buildUrl} from './client';
 import {
+  extractArchiveIdentifier,
+  getArchiveEpisodes,
+  isArchiveFeedUrl,
+  searchArchive,
+} from './archiveApi';
+import {
   ITunesSearchResponse,
   PodcastEpisode,
   PodcastShow,
@@ -17,7 +23,7 @@ type PodcastSearchOptions = {
 type XmlRecord = Record<string, unknown>;
 
 const defaultSearchOptions: Required<PodcastSearchOptions> = {
-  country: 'US',
+  country: 'IN',
   limit: 20,
 };
 
@@ -68,19 +74,32 @@ export async function searchPodcastsAcrossTerms(
   const normalizedTerms = Array.from(
     new Set(terms.map(normalizeSearchTerm).filter(Boolean)),
   );
-  const results = await Promise.allSettled(
+  const itunesResults = await Promise.allSettled(
     normalizedTerms.map(term => searchPodcasts(term, options)),
   );
+  const archiveResults = await Promise.allSettled(
+    normalizedTerms.map(term => searchArchive(term, {limit: 10})),
+  );
   const searchContext = normalizedTerms.join(' ');
-
-  return uniqueShowsByFeedUrl(
-    results.flatMap(result =>
+  const combined = [
+    ...itunesResults.flatMap(result =>
       result.status === 'fulfilled' ? result.value : [],
     ),
-  ).sort((a, b) => scoreShow(b, searchContext) - scoreShow(a, searchContext));
+    ...archiveResults.flatMap(result =>
+      result.status === 'fulfilled' ? result.value : [],
+    ),
+  ];
+
+  return uniqueShowsByFeedUrl(combined).sort(
+    (a, b) => scoreShow(b, searchContext) - scoreShow(a, searchContext),
+  );
 }
 
 export async function getPodcastEpisodes(feedUrl: string): Promise<PodcastEpisode[]> {
+  if (isArchiveFeedUrl(feedUrl)) {
+    return getArchiveEpisodes(extractArchiveIdentifier(feedUrl));
+  }
+
   if (!isHttpUrl(feedUrl)) {
     throw new Error('Podcast feed URL is invalid');
   }
@@ -255,22 +274,13 @@ function normalizeImageUrl(value?: string) {
 
 function scoreShow(show: PodcastShow, searchContext: string) {
   const haystack = `${show.title} ${show.author} ${show.genre ?? ''}`.toLowerCase();
-  const context = searchContext.toLowerCase();
-  const preferredWords = [
-    'gita',
-    'bhagavad',
-    'sanskrit',
-    'vedanta',
-    'spiritual',
-    'wisdom',
-    'meditation',
-    'philosophy',
-    'hindu',
-    'krishna',
-  ];
+  const contextWords = searchContext
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(word => word.length > 2);
 
-  return preferredWords.reduce((score, word) => {
-    const contextBoost = context.includes(word) ? 2 : 1;
-    return haystack.includes(word) ? score + contextBoost : score;
-  }, 0);
+  return contextWords.reduce(
+    (score, word) => (haystack.includes(word) ? score + 1 : score),
+    0,
+  );
 }

@@ -5,4 +5,7 @@ export type RootStackParamList = {
   };
   Home: undefined;
   Library: undefined;
+  Read: {
+    collectionId: string;
+  };
 };

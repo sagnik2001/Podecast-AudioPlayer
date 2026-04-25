@@ -24,11 +24,48 @@ import {colors} from '../theme/colors';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
-const practiceModes: {label: string; sublabel: string; symbol: string}[] = [
-  {label: 'Listen', sublabel: 'Shravana', symbol: 'ॐ'},
-  {label: 'Read', sublabel: 'Paath', symbol: '॥'},
-  {label: 'Translate', sublabel: 'Viveka', symbol: '∞'},
-  {label: 'Reflect', sublabel: 'Dhyana', symbol: '◈'},
+type PracticeMode = {
+  key: 'listen' | 'read' | 'translate' | 'reflect';
+  label: string;
+  sublabel: string;
+  description: string;
+  symbol: string;
+  available: boolean;
+};
+
+const practiceModes: PracticeMode[] = [
+  {
+    key: 'listen',
+    label: 'Listen',
+    sublabel: 'Shravana',
+    description: 'Recitations, path, and Bengali discourses',
+    symbol: 'ॐ',
+    available: true,
+  },
+  {
+    key: 'read',
+    label: 'Read',
+    sublabel: 'Paath',
+    description: 'Verse-by-verse reading with devanagari',
+    symbol: '॥',
+    available: false,
+  },
+  {
+    key: 'translate',
+    label: 'Translate',
+    sublabel: 'Viveka',
+    description: 'Hindi and English translations of every verse',
+    symbol: '∞',
+    available: false,
+  },
+  {
+    key: 'reflect',
+    label: 'Reflect',
+    sublabel: 'Dhyana',
+    description: 'Daily contemplation and practice prompts',
+    symbol: '◈',
+    available: false,
+  },
 ];
 
 type SanskritGreeting = {salutation: string; subtitle: string};
@@ -51,7 +88,9 @@ function getSanskritGreeting(): SanskritGreeting {
 }
 
 export function HomeScreen({navigation}: HomeScreenProps) {
-  const podcastDiscovery = usePodcastDiscovery(featuredCollection.audioSearchTerms);
+  const podcastDiscovery = usePodcastDiscovery(
+    featuredCollection.curatedPodcastShow ? [] : featuredCollection.audioSearchTerms,
+  );
   const selectedShow = selectCollectionPodcastShow(
     featuredCollection,
     podcastDiscovery.data,
@@ -170,27 +209,65 @@ export function HomeScreen({navigation}: HomeScreenProps) {
         </View>
 
         {/* Practice modes */}
-        <View style={styles.modeRow}>
-          {practiceModes.map((mode, index) => (
+        <View style={styles.modesHeader}>
+          <Text style={styles.sectionEyebrow}>✦ Sadhana ✦</Text>
+          <Text style={styles.sectionTitle}>Four paths of practice</Text>
+        </View>
+        <View style={styles.modeGrid}>
+          {practiceModes.map(mode => (
             <TouchableOpacity
-              activeOpacity={0.85}
-              key={mode.label}
-              style={[styles.modeChip, index === 0 && styles.modeChipActive]}>
-              <Text
+              activeOpacity={mode.available ? 0.85 : 1}
+              disabled={!mode.available}
+              key={mode.key}
+              onPress={() => {
+                if (mode.available) {
+                  navigation.navigate('Library');
+                }
+              }}
+              style={[
+                styles.modeCard,
+                mode.available
+                  ? styles.modeCardActive
+                  : styles.modeCardMuted,
+              ]}>
+              {!mode.available ? (
+                <View style={styles.modeSoonBadge}>
+                  <Text style={styles.modeSoonText}>Coming soon</Text>
+                </View>
+              ) : (
+                <View style={styles.modeActiveBadge}>
+                  <View style={styles.modeActiveDot} />
+                  <Text style={styles.modeActiveText}>Open</Text>
+                </View>
+              )}
+              <View
                 style={[
-                  styles.modeSymbol,
-                  index === 0 && styles.modeSymbolActive,
+                  styles.modeSymbolPlate,
+                  mode.available
+                    ? styles.modeSymbolPlateActive
+                    : styles.modeSymbolPlateMuted,
                 ]}>
-                {mode.symbol}
-              </Text>
+                <Text
+                  style={[
+                    styles.modeSymbolGlyph,
+                    mode.available
+                      ? styles.modeSymbolGlyphActive
+                      : styles.modeSymbolGlyphMuted,
+                  ]}>
+                  {mode.symbol}
+                </Text>
+              </View>
               <Text
                 style={[
-                  styles.modeLabel,
-                  index === 0 && styles.modeLabelActive,
+                  styles.modeCardLabel,
+                  !mode.available && styles.modeCardLabelMuted,
                 ]}>
                 {mode.label}
               </Text>
-              <Text style={styles.modeSublabel}>{mode.sublabel}</Text>
+              <Text style={styles.modeCardSublabel}>{mode.sublabel}</Text>
+              <Text style={styles.modeCardDescription}>
+                {mode.description}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -548,49 +625,125 @@ const styles = StyleSheet.create({
   },
 
   /* Practice modes */
-  modeRow: {
+  modesHeader: {
+    marginBottom: 14,
+  },
+  modeGrid: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 10,
     marginBottom: 28,
   },
-  modeChip: {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    flex: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 12,
+  modeCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 180,
+    padding: 16,
+    position: 'relative',
+    width: '47%',
   },
-  modeChipActive: {
+  modeCardActive: {
+    backgroundColor: colors.surface,
+    borderColor: colors.brandBorder,
+  },
+  modeCardMuted: {
+    backgroundColor: colors.backgroundSoft,
+    borderColor: colors.lineSoft,
+    opacity: 0.92,
+  },
+  modeSoonBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.lineSoft,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  modeSoonText: {
+    color: colors.dim,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
+  modeActiveBadge: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: colors.brandTint,
     borderColor: colors.brandBorder,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  modeActiveDot: {
+    backgroundColor: colors.brandBright,
+    borderRadius: 999,
+    height: 6,
+    width: 6,
+  },
+  modeActiveText: {
+    color: colors.brand,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
+  modeSymbolPlate: {
+    alignItems: 'center',
+    borderRadius: 14,
+    height: 44,
+    justifyContent: 'center',
+    marginBottom: 12,
+    marginTop: 14,
+    width: 44,
+  },
+  modeSymbolPlateActive: {
+    backgroundColor: colors.brand,
+  },
+  modeSymbolPlateMuted: {
+    backgroundColor: colors.surface,
+    borderColor: colors.lineSoft,
     borderWidth: 1,
   },
-  modeSymbol: {
-    color: colors.muted,
+  modeSymbolGlyph: {
     fontSize: 20,
-    marginBottom: 6,
-  },
-  modeSymbolActive: {
-    color: colors.brand,
-  },
-  modeLabel: {
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  modeLabelActive: {
-    color: colors.brand,
     fontWeight: '700',
   },
-  modeSublabel: {
-    color: colors.faint,
-    fontSize: 9,
-    fontWeight: '500',
-    letterSpacing: 0.6,
-    marginTop: 2,
+  modeSymbolGlyphActive: {
+    color: colors.white,
+  },
+  modeSymbolGlyphMuted: {
+    color: colors.dim,
+  },
+  modeCardLabel: {
+    color: colors.ink,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  modeCardLabelMuted: {
+    color: colors.inkSoft,
+  },
+  modeCardSublabel: {
+    color: colors.brand,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    marginTop: 3,
     textTransform: 'uppercase',
+  },
+  modeCardDescription: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 17,
+    marginTop: 8,
   },
 
   /* Sections */

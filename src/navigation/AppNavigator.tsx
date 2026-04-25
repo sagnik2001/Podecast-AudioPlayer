@@ -6,6 +6,7 @@ import {BootScreen} from '../screens/BootScreen';
 import {CollectionScreen} from '../screens/CollectionScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {LibraryScreen} from '../screens/LibraryScreen';
+import {ReadScreen} from '../screens/ReadScreen';
 import {colors} from '../theme/colors';
 import {RootStackParamList} from './types';
 
@@ -25,6 +26,7 @@ export function AppNavigator() {
         <Stack.Screen component={HomeScreen} name="Home" />
         <Stack.Screen component={CollectionScreen} name="Collection" />
         <Stack.Screen component={LibraryScreen} name="Library" />
+        <Stack.Screen component={ReadScreen} name="Read" />
       </Stack.Navigator>
     </NavigationContainer>
   );

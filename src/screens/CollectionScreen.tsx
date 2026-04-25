@@ -9,6 +9,7 @@ import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, getCollectionById} from '../content/collections';
+import {hasReadContent} from '../content/verses';
 import {Episode} from '../data/episodes';
 import {RootStackParamList} from '../navigation/types';
 import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
@@ -22,7 +23,9 @@ type CollectionScreenProps = NativeStackScreenProps<
 export function CollectionScreen({navigation, route}: CollectionScreenProps) {
   const collection =
     getCollectionById(route.params.collectionId) ?? featuredCollection;
-  const podcastDiscovery = usePodcastDiscovery(collection.audioSearchTerms);
+  const podcastDiscovery = usePodcastDiscovery(
+    collection.curatedPodcastShow ? [] : collection.audioSearchTerms,
+  );
   const selectedShow = selectCollectionPodcastShow(
     collection,
     podcastDiscovery.data,
@@ -65,6 +68,28 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
             <Text style={styles.metaPill}>{collection.language}</Text>
             <Text style={styles.metaPill}>{collection.textProvider}</Text>
           </View>
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={() =>
+              navigation.navigate('Read', {collectionId: collection.id})
+            }
+            style={[styles.readButton, {backgroundColor: collection.accent}]}>
+            <View style={styles.readButtonRow}>
+              <Text style={styles.readButtonText}>
+                Read • Translate • Reflect
+              </Text>
+              {!hasReadContent(collection.id) ? (
+                <View style={styles.readSoonBadge}>
+                  <Text style={styles.readSoonBadgeText}>Coming soon</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.readButtonSubtext}>
+              {hasReadContent(collection.id)
+                ? 'Verses with हिन्दी / English translations'
+                : 'Verse path in preparation — preview inside'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Reading path</Text>
@@ -104,7 +129,7 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
         </Text>
         <Text style={styles.emptyBody}>
           {isLoading
-            ? 'Searching iTunes and parsing the selected RSS feed.'
+            ? 'Searching Apple Podcasts and Internet Archive, then loading playable audio.'
             : realDataError instanceof Error
               ? realDataError.message
               : 'Try another source term for this collection later.'}
@@ -212,6 +237,42 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 16,
+  },
+  readButton: {
+    borderRadius: 16,
+    marginTop: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  readButtonRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  readButtonText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  readButtonSubtext: {
+    color: 'rgba(255,255,255,0.78)',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  readSoonBadge: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  readSoonBadgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   metaPill: {
     backgroundColor: colors.brandTint,

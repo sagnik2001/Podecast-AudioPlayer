@@ -29,10 +29,13 @@ export function useCollectionAudioLibrary(
 async function getCollectionAudio(
   collection: ScriptureCollection,
 ): Promise<CollectionAudioResult> {
-  const shows = await searchPodcastsAcrossTerms(collection.audioSearchTerms, {
-    limit: 12,
-  });
-  const show = selectCollectionPodcastShow(collection, shows);
+  const curatedShow = selectCollectionPodcastShow(collection);
+  const shows = curatedShow
+    ? []
+    : await searchPodcastsAcrossTerms(collection.audioSearchTerms, {
+        limit: 12,
+      });
+  const show = curatedShow ?? selectCollectionPodcastShow(collection, shows);
   const episodes = show ? await getPodcastEpisodes(show.feedUrl) : [];
 
   return {
