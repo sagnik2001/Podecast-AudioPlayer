@@ -74,12 +74,14 @@ export async function searchPodcastsAcrossTerms(
   const normalizedTerms = Array.from(
     new Set(terms.map(normalizeSearchTerm).filter(Boolean)),
   );
-  const itunesResults = await Promise.allSettled(
-    normalizedTerms.map(term => searchPodcasts(term, options)),
-  );
-  const archiveResults = await Promise.allSettled(
-    normalizedTerms.map(term => searchArchive(term, {limit: 10})),
-  );
+  const [itunesResults, archiveResults] = await Promise.all([
+    Promise.allSettled(
+      normalizedTerms.map(term => searchPodcasts(term, options)),
+    ),
+    Promise.allSettled(
+      normalizedTerms.map(term => searchArchive(term, {limit: 10})),
+    ),
+  ]);
   const searchContext = normalizedTerms.join(' ');
   const combined = [
     ...itunesResults.flatMap(result =>

@@ -1,6 +1,12 @@
 import React, {useCallback, useMemo} from 'react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {StatusBar, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {FlashList, ListRenderItem} from '@shopify/flash-list';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
@@ -11,8 +17,12 @@ import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, getCollectionById} from '../content/collections';
 import {hasReadContent} from '../content/verses';
 import {Episode} from '../data/episodes';
+import {useRestoredPlayback} from '../hooks/useRestoredPlayback';
 import {RootStackParamList} from '../navigation/types';
-import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
+import {
+  usePodcastDiscovery,
+  usePodcastEpisodes,
+} from '../queries/podcastQueries';
 import {colors} from '../theme/colors';
 
 type CollectionScreenProps = NativeStackScreenProps<
@@ -21,6 +31,7 @@ type CollectionScreenProps = NativeStackScreenProps<
 >;
 
 export function CollectionScreen({navigation, route}: CollectionScreenProps) {
+  const restoredPlayback = useRestoredPlayback();
   const collection =
     getCollectionById(route.params.collectionId) ?? featuredCollection;
   const podcastDiscovery = usePodcastDiscovery(
@@ -35,7 +46,7 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
     () => podcastEpisodes.data?.map(mapPodcastEpisodeToEpisode) ?? [],
     [podcastEpisodes.data],
   );
-  const heroEpisode = episodes[0];
+  const heroEpisode = episodes[0] ?? restoredPlayback.episode;
   const isLoading = podcastDiscovery.isLoading || podcastEpisodes.isLoading;
   const realDataError = podcastDiscovery.error ?? podcastEpisodes.error;
 
@@ -50,12 +61,15 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
         <TouchableOpacity
           activeOpacity={0.78}
           onPress={() => navigation.goBack()}
-          style={styles.backButton}>
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
 
         <View style={[styles.hero, {borderColor: collection.accent}]}>
-          <View style={[styles.symbolPlate, {backgroundColor: collection.accent}]}>
+          <View
+            style={[styles.symbolPlate, {backgroundColor: collection.accent}]}
+          >
             <Text numberOfLines={1} style={styles.symbol}>
               {collection.symbol}
             </Text>
@@ -73,7 +87,8 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
             onPress={() =>
               navigation.navigate('Read', {collectionId: collection.id})
             }
-            style={[styles.readButton, {backgroundColor: collection.accent}]}>
+            style={[styles.readButton, {backgroundColor: collection.accent}]}
+          >
             <View style={styles.readButtonRow}>
               <Text style={styles.readButtonText}>
                 Read • Translate • Reflect
@@ -131,8 +146,8 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
           {isLoading
             ? 'Searching Apple Podcasts and Internet Archive, then loading playable audio.'
             : realDataError instanceof Error
-              ? realDataError.message
-              : 'Try another source term for this collection later.'}
+            ? realDataError.message
+            : 'Try another source term for this collection later.'}
         </Text>
       </View>
     ),
@@ -154,7 +169,10 @@ export function CollectionScreen({navigation, route}: CollectionScreenProps) {
 
       {heroEpisode ? (
         <View style={styles.dock}>
-          <PlayerDock episode={heroEpisode} queue={episodes} />
+          <PlayerDock
+            episode={heroEpisode}
+            queue={episodes.length > 0 ? episodes : restoredPlayback.queue}
+          />
         </View>
       ) : null}
     </SafeAreaView>

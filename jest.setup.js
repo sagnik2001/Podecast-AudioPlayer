@@ -34,7 +34,8 @@ jest.mock('react-native-gesture-handler', () => {
     Gesture: {
       Pan: jest.fn(() => gesture),
     },
-    GestureDetector: ({children}) => React.createElement(React.Fragment, null, children),
+    GestureDetector: ({children}) =>
+      React.createElement(React.Fragment, null, children),
     GestureHandlerRootView: props => React.createElement(View, props),
   };
 });
@@ -49,6 +50,26 @@ jest.mock('react-native-nitro-fetch', () => ({
     status: 200,
   })),
 }));
+
+jest.mock('react-native-mmkv', () => {
+  const stores = new Map();
+
+  return {
+    createMMKV: ({id = 'default'} = {}) => {
+      if (!stores.has(id)) {
+        stores.set(id, new Map());
+      }
+
+      const store = stores.get(id);
+
+      return {
+        clearAll: jest.fn(() => store.clear()),
+        getString: jest.fn(key => store.get(key)),
+        set: jest.fn((key, value) => store.set(key, String(value))),
+      };
+    },
+  };
+});
 
 jest.mock('@shopify/flash-list', () => {
   const React = require('react');
@@ -78,14 +99,23 @@ jest.mock('react-native-track-player', () => {
   return {
     __esModule: true,
     default: {
+      addEventListener: jest.fn(() => ({remove: jest.fn()})),
       add: jest.fn(),
       getActiveTrack: jest.fn(async () => undefined),
+      getPlaybackState: jest.fn(async () => ({state: State.Paused})),
+      getProgress: jest.fn(async () => ({
+        buffered: 0,
+        duration: 0,
+        position: 0,
+      })),
+      getQueue: jest.fn(async () => []),
       pause: jest.fn(),
       play: jest.fn(),
       registerPlaybackService: jest.fn(),
       reset: jest.fn(),
       seekBy: jest.fn(),
       seekTo: jest.fn(),
+      skip: jest.fn(),
       setupPlayer: jest.fn(),
       skipToNext: jest.fn(),
       skipToPrevious: jest.fn(),
@@ -93,6 +123,9 @@ jest.mock('react-native-track-player', () => {
     },
     Capability,
     Event: {
+      PlaybackActiveTrackChanged: 'playback-active-track-changed',
+      PlaybackProgressUpdated: 'playback-progress-updated',
+      PlaybackState: 'playback-state',
       RemoteNext: 'remote-next',
       RemotePause: 'remote-pause',
       RemotePlay: 'remote-play',

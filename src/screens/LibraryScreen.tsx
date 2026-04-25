@@ -1,6 +1,12 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {StatusBar, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {FlashList, ListRenderItem} from '@shopify/flash-list';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
@@ -8,6 +14,7 @@ import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {EpisodeCard} from '../components/EpisodeCard';
 import {PlayerDock} from '../components/PlayerDock';
 import {Episode} from '../data/episodes';
+import {useRestoredPlayback} from '../hooks/useRestoredPlayback';
 import {RootStackParamList} from '../navigation/types';
 import {
   CollectionAudioResult,
@@ -35,14 +42,39 @@ function isCollectionAudioResult(
   return Boolean(result);
 }
 
+const keyExtractor = (item: Episode) => item.id;
+
 export function LibraryScreen({navigation}: LibraryScreenProps) {
-  const [visibleEpisodeCount, setVisibleEpisodeCount] = useState(initialEpisodeCount);
+  const [visibleEpisodeCount, setVisibleEpisodeCount] =
+    useState(initialEpisodeCount);
   const [activeFilter, setActiveFilter] = useState<LibraryFilter>('all');
+  const restoredPlayback = useRestoredPlayback();
   const collectionAudioQueries = useCollectionAudioLibrary();
-  const collectionAudioResults = collectionAudioQueries
-    .map(query => query.data)
-    .filter(isCollectionAudioResult);
-  const displayEpisodes = useMemo(
+  const queryDataSignature = collectionAudioQueries
+    .map(query => query.data?.collection.id ?? '')
+    .join('|');
+  const collectionAudioResults = useMemo(
+    () =>
+      collectionAudioQueries
+        .map(query => query.data)
+        .filter(isCollectionAudioResult),
+    // queryDataSignature captures changes to which queries have data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [queryDataSignature],
+  );
+  const isLoadingRealData = collectionAudioQueries.some(
+    query => query.isLoading,
+  );
+  const isFetchingRealData = collectionAudioQueries.some(
+    query => query.isFetching,
+  );
+  const realDataError = collectionAudioQueries.find(
+    query => query.error,
+  )?.error;
+  const loadedCollectionCount = collectionAudioResults.filter(
+    result => result.episodes.length > 0,
+  ).length;
+  const orderedEpisodes = useMemo(
     () =>
       collectionAudioResults
         .flatMap(result =>
@@ -54,7 +86,6 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
               accent: result.collection.accent,
               id: `${result.collection.id}-${episode.id}`,
               phase: result.collection.symbol,
-              queuePosition: index + 1,
               show: result.collection.title,
               tag: result.show?.title ?? episode.tag,
             };
@@ -65,19 +96,6 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           queuePosition: index + 1,
         })),
     [collectionAudioResults],
-  );
-  const isLoadingRealData = collectionAudioQueries.some(query => query.isLoading);
-  const isFetchingRealData = collectionAudioQueries.some(query => query.isFetching);
-  const realDataError = collectionAudioQueries.find(query => query.error)?.error;
-  const loadedCollectionCount = collectionAudioResults.filter(
-    result => result.episodes.length > 0,
-  ).length;
-  const orderedEpisodes = useMemo(
-    () =>
-      displayEpisodes
-        .slice()
-        .sort((a, b) => (a.queuePosition ?? 99) - (b.queuePosition ?? 99)),
-    [displayEpisodes],
   );
 
   const filteredEpisodes = useMemo(() => {
@@ -98,8 +116,13 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
     return orderedEpisodes;
   }, [activeFilter, orderedEpisodes]);
 
-  const currentEpisode = orderedEpisodes[0];
-  const visibleEpisodes = filteredEpisodes.slice(0, visibleEpisodeCount);
+  const currentEpisode = orderedEpisodes[0] ?? restoredPlayback.episode;
+  const currentQueue =
+    orderedEpisodes.length > 0 ? orderedEpisodes : restoredPlayback.queue;
+  const visibleEpisodes = useMemo(
+    () => filteredEpisodes.slice(0, visibleEpisodeCount),
+    [filteredEpisodes, visibleEpisodeCount],
+  );
   const hasMoreEpisodes = visibleEpisodeCount < filteredEpisodes.length;
 
   const totals = useMemo(() => {
@@ -116,7 +139,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
 
   useEffect(() => {
     setVisibleEpisodeCount(initialEpisodeCount);
-  }, [activeFilter, displayEpisodes.length]);
+  }, [activeFilter, orderedEpisodes.length]);
 
   const loadMoreEpisodes = useCallback(() => {
     if (!hasMoreEpisodes) {
@@ -140,7 +163,8 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           <TouchableOpacity
             activeOpacity={0.78}
             onPress={() => navigation.goBack()}
-            style={styles.iconButton}>
+            style={styles.iconButton}
+          >
             <Text style={styles.iconGlyph}>←</Text>
           </TouchableOpacity>
           <Text style={styles.topBarTitle}>Library</Text>
@@ -156,14 +180,16 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
             {loadedCollectionCount > 0
               ? `Streaming from ${loadedCollectionCount} collections`
               : isLoadingRealData
-                ? 'Finding spiritual feeds and recitations.'
-                : 'No live source available right now.'}
+              ? 'Finding spiritual feeds and recitations.'
+              : 'No live source available right now.'}
           </Text>
         </View>
 
         <View style={styles.searchBar}>
           <Text style={styles.searchGlyph}>⌕</Text>
-          <Text style={styles.searchPlaceholder}>Search teachings, reciters…</Text>
+          <Text style={styles.searchPlaceholder}>
+            Search teachings, reciters…
+          </Text>
         </View>
 
         <View style={styles.statsRow}>
@@ -191,12 +217,14 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
                 activeOpacity={0.85}
                 key={filter.id}
                 onPress={() => setActiveFilter(filter.id)}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}>
+                style={[styles.filterChip, isActive && styles.filterChipActive]}
+              >
                 <Text
                   style={[
                     styles.filterText,
                     isActive && styles.filterTextActive,
-                  ]}>
+                  ]}
+                >
                   {filter.label}
                 </Text>
               </TouchableOpacity>
@@ -209,10 +237,10 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
             {activeFilter === 'inProgress'
               ? 'Continue sadhana'
               : activeFilter === 'saved'
-                ? 'Saved for paath'
-                : activeFilter === 'fresh'
-                  ? 'Fresh teachings'
-                  : 'All teachings'}
+              ? 'Saved for paath'
+              : activeFilter === 'fresh'
+              ? 'Fresh teachings'
+              : 'All teachings'}
           </Text>
           <Text style={styles.sectionCount}>{filteredEpisodes.length}</Text>
         </View>
@@ -237,17 +265,17 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           {isLoadingRealData
             ? 'Loading teachings'
             : activeFilter !== 'all'
-              ? 'Nothing here yet'
-              : 'No playable episodes'}
+            ? 'Nothing here yet'
+            : 'No playable episodes'}
         </Text>
         <Text style={styles.emptyBody}>
           {isLoadingRealData
             ? 'Fetching Apple Podcasts and Internet Archive sources, then loading playable audio.'
             : activeFilter !== 'all'
-              ? 'Try a different filter or check back after listening more.'
-              : realDataError instanceof Error
-                ? realDataError.message
-                : 'The selected feed returned no playable audio files.'}
+            ? 'Try a different filter or check back after listening more.'
+            : realDataError instanceof Error
+            ? realDataError.message
+            : 'The selected feed returned no playable audio files.'}
         </Text>
       </View>
     ),
@@ -261,10 +289,10 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           {hasMoreEpisodes
             ? 'Loading more episodes…'
             : isFetchingRealData
-              ? 'Refreshing feed'
-              : visibleEpisodes.length > 0
-                ? 'You’ve reached the end'
-                : ''}
+            ? 'Refreshing feed'
+            : visibleEpisodes.length > 0
+            ? 'You’ve reached the end'
+            : ''}
         </Text>
       </View>
     ),
@@ -277,20 +305,19 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
       <FlashList
         contentContainerStyle={styles.content}
         data={visibleEpisodes}
-        extraData={{hasMoreEpisodes, isFetching: isFetchingRealData}}
-        keyExtractor={item => item.id}
+        keyExtractor={keyExtractor}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
         ListHeaderComponent={renderHeader}
         onEndReached={loadMoreEpisodes}
-        onEndReachedThreshold={0.45}
+        onEndReachedThreshold={0.6}
         renderItem={renderEpisode}
         showsVerticalScrollIndicator={false}
       />
 
       {currentEpisode ? (
         <View style={styles.dock}>
-          <PlayerDock episode={currentEpisode} queue={orderedEpisodes} />
+          <PlayerDock episode={currentEpisode} queue={currentQueue} />
         </View>
       ) : null}
     </SafeAreaView>

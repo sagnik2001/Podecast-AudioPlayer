@@ -18,8 +18,12 @@ import {ShelfCard} from '../components/ShelfCard';
 import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, scriptureCollections} from '../content/collections';
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
+import {useRestoredPlayback} from '../hooks/useRestoredPlayback';
 import {RootStackParamList} from '../navigation/types';
-import {usePodcastDiscovery, usePodcastEpisodes} from '../queries/podcastQueries';
+import {
+  usePodcastDiscovery,
+  usePodcastEpisodes,
+} from '../queries/podcastQueries';
 import {colors} from '../theme/colors';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -73,23 +77,41 @@ type SanskritGreeting = {salutation: string; subtitle: string};
 function getSanskritGreeting(): SanskritGreeting {
   const hour = new Date().getHours();
   if (hour >= 4 && hour < 6) {
-    return {salutation: 'ब्राह्म मुहूर्त', subtitle: 'Sacred brahma muhurta — the ideal hour of study'};
+    return {
+      salutation: 'ब्राह्म मुहूर्त',
+      subtitle: 'Sacred brahma muhurta — the ideal hour of study',
+    };
   }
   if (hour >= 6 && hour < 12) {
-    return {salutation: 'सुप्रभातम्', subtitle: 'Good morning — begin with intention'};
+    return {
+      salutation: 'सुप्रभातम्',
+      subtitle: 'Good morning — begin with intention',
+    };
   }
   if (hour >= 12 && hour < 17) {
-    return {salutation: 'शुभ मध्याह्न', subtitle: 'Blessed afternoon — continue your sadhana'};
+    return {
+      salutation: 'शुभ मध्याह्न',
+      subtitle: 'Blessed afternoon — continue your sadhana',
+    };
   }
   if (hour >= 17 && hour < 21) {
-    return {salutation: 'शुभ संध्या', subtitle: 'Good evening — time for reflection'};
+    return {
+      salutation: 'शुभ संध्या',
+      subtitle: 'Good evening — time for reflection',
+    };
   }
-  return {salutation: 'शुभ रात्रि', subtitle: 'Good night — close with gratitude'};
+  return {
+    salutation: 'शुभ रात्रि',
+    subtitle: 'Good night — close with gratitude',
+  };
 }
 
 export function HomeScreen({navigation}: HomeScreenProps) {
+  const restoredPlayback = useRestoredPlayback();
   const podcastDiscovery = usePodcastDiscovery(
-    featuredCollection.curatedPodcastShow ? [] : featuredCollection.audioSearchTerms,
+    featuredCollection.curatedPodcastShow
+      ? []
+      : featuredCollection.audioSearchTerms,
   );
   const selectedShow = selectCollectionPodcastShow(
     featuredCollection,
@@ -99,8 +121,9 @@ export function HomeScreen({navigation}: HomeScreenProps) {
   const liveEpisodes =
     podcastEpisodes.data?.slice(0, 6).map(mapPodcastEpisodeToEpisode) ?? [];
   const displayEpisodes = liveEpisodes;
-  const heroEpisode = displayEpisodes[0];
-  const isLoadingRealData = podcastDiscovery.isLoading || podcastEpisodes.isLoading;
+  const heroEpisode = displayEpisodes[0] ?? restoredPlayback.episode;
+  const isLoadingRealData =
+    podcastDiscovery.isLoading || podcastEpisodes.isLoading;
   const realDataError = podcastDiscovery.error ?? podcastEpisodes.error;
   const dataLabel = selectedShow ? selectedShow.title : 'podcast feed';
   const greeting = useMemo(getSanskritGreeting, []);
@@ -110,8 +133,8 @@ export function HomeScreen({navigation}: HomeScreenProps) {
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
       <ScrollView
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}>
-
+        showsVerticalScrollIndicator={false}
+      >
         {/* Top bar */}
         <View style={styles.topBar}>
           <View>
@@ -176,7 +199,9 @@ export function HomeScreen({navigation}: HomeScreenProps) {
             <View style={styles.heroContent}>
               <Text numberOfLines={2} style={styles.heroTitle}>
                 {heroEpisode?.title ??
-                  (isLoadingRealData ? 'Tuning the feed…' : 'No live sessions found')}
+                  (isLoadingRealData
+                    ? 'Tuning the feed…'
+                    : 'No live sessions found')}
               </Text>
               <Text numberOfLines={1} style={styles.heroShow}>
                 {heroEpisode?.show ?? dataLabel}
@@ -189,7 +214,10 @@ export function HomeScreen({navigation}: HomeScreenProps) {
                 />
               </View>
               <View style={styles.heroActions}>
-                <TouchableOpacity activeOpacity={0.85} style={styles.heroSecondary}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.heroSecondary}
+                >
                   <Text style={styles.heroSecondaryGlyph}>॥</Text>
                   <Text style={styles.heroSecondaryText}>Paath</Text>
                 </TouchableOpacity>
@@ -199,7 +227,8 @@ export function HomeScreen({navigation}: HomeScreenProps) {
                   style={[
                     styles.heroPrimary,
                     !heroEpisode?.audioUrl && styles.heroPrimaryDisabled,
-                  ]}>
+                  ]}
+                >
                   <Text style={styles.heroPrimaryGlyph}>▶</Text>
                   <Text style={styles.heroPrimaryText}>Shravana</Text>
                 </TouchableOpacity>
@@ -226,10 +255,9 @@ export function HomeScreen({navigation}: HomeScreenProps) {
               }}
               style={[
                 styles.modeCard,
-                mode.available
-                  ? styles.modeCardActive
-                  : styles.modeCardMuted,
-              ]}>
+                mode.available ? styles.modeCardActive : styles.modeCardMuted,
+              ]}
+            >
               {!mode.available ? (
                 <View style={styles.modeSoonBadge}>
                   <Text style={styles.modeSoonText}>Coming soon</Text>
@@ -246,14 +274,16 @@ export function HomeScreen({navigation}: HomeScreenProps) {
                   mode.available
                     ? styles.modeSymbolPlateActive
                     : styles.modeSymbolPlateMuted,
-                ]}>
+                ]}
+              >
                 <Text
                   style={[
                     styles.modeSymbolGlyph,
                     mode.available
                       ? styles.modeSymbolGlyphActive
                       : styles.modeSymbolGlyphMuted,
-                  ]}>
+                  ]}
+                >
                   {mode.symbol}
                 </Text>
               </View>
@@ -261,13 +291,12 @@ export function HomeScreen({navigation}: HomeScreenProps) {
                 style={[
                   styles.modeCardLabel,
                   !mode.available && styles.modeCardLabelMuted,
-                ]}>
+                ]}
+              >
                 {mode.label}
               </Text>
               <Text style={styles.modeCardSublabel}>{mode.sublabel}</Text>
-              <Text style={styles.modeCardDescription}>
-                {mode.description}
-              </Text>
+              <Text style={styles.modeCardDescription}>{mode.description}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -284,14 +313,16 @@ export function HomeScreen({navigation}: HomeScreenProps) {
               navigation.navigate('Collection', {
                 collectionId: featuredCollection.id,
               })
-            }>
+            }
+          >
             <Text style={styles.sectionAction}>Explore</Text>
           </TouchableOpacity>
         </View>
         <ScrollView
           contentContainerStyle={styles.shelfRow}
           horizontal
-          showsHorizontalScrollIndicator={false}>
+          showsHorizontalScrollIndicator={false}
+        >
           {scriptureCollections.map(collection => (
             <ShelfCard
               accent={collection.accent}
@@ -316,7 +347,8 @@ export function HomeScreen({navigation}: HomeScreenProps) {
           </View>
           <TouchableOpacity
             activeOpacity={0.78}
-            onPress={() => navigation.navigate('Library')}>
+            onPress={() => navigation.navigate('Library')}
+          >
             <Text style={styles.sectionAction}>All teachings</Text>
           </TouchableOpacity>
         </View>
@@ -341,8 +373,8 @@ export function HomeScreen({navigation}: HomeScreenProps) {
               {isLoadingRealData
                 ? 'Fetching recitations, lectures, and sacred readings.'
                 : realDataError instanceof Error
-                  ? realDataError.message
-                  : 'The current feed returned no playable audio.'}
+                ? realDataError.message
+                : 'The current feed returned no playable audio.'}
             </Text>
           </View>
         )}
@@ -350,7 +382,14 @@ export function HomeScreen({navigation}: HomeScreenProps) {
 
       {heroEpisode ? (
         <View style={styles.dock}>
-          <PlayerDock episode={heroEpisode} queue={displayEpisodes} />
+          <PlayerDock
+            episode={heroEpisode}
+            queue={
+              displayEpisodes.length > 0
+                ? displayEpisodes
+                : restoredPlayback.queue
+            }
+          />
         </View>
       ) : null}
     </SafeAreaView>

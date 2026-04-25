@@ -37,6 +37,43 @@ const commonLanguageExcludes = [
 
 export const scriptureCollections: ScriptureCollection[] = [
   {
+    id: 'bhagavad-gita',
+    title: 'Srimad Bhagavad Gita',
+    subtitle: '18 adhyayas • Bengali',
+    description:
+      'Bengali paath of the Gita with chapter-wise verses, meaning, and devotional commentary.',
+    language: 'Bengali',
+    tradition: 'Vedanta',
+    symbol: 'ॐ',
+    accent: colors.saffron,
+    textProvider: 'gita-api',
+    audioSearchTerms: [
+      'bhagavad gita bengali',
+      'bhagavad gita bangla',
+      'srimad bhagavad gita bangla',
+      'srimad bhagavad gita bengali path',
+      'gita path bangla',
+      'gita paath bengali',
+      'gita bengali discourse',
+    ],
+    audioIncludeTerms: [
+      'gita',
+      'gita path',
+      'bhagavad gita',
+      'srimad bhagavad gita',
+      'geeta',
+    ],
+    audioExcludeTerms: [
+      ...commonBengaliExcludes,
+      ...commonLanguageExcludes,
+    ],
+    sections: [
+      {id: 'gita-1', title: 'Chapters 1-6', subtitle: 'Karma and self-mastery'},
+      {id: 'gita-2', title: 'Chapters 7-12', subtitle: 'Bhakti and knowledge'},
+      {id: 'gita-3', title: 'Chapters 13-18', subtitle: 'Nature, duty, liberation'},
+    ],
+  },
+  {
     id: 'mahalaya-bengali',
     title: 'Mahalaya',
     subtitle: 'Mahishasura Mardini • Bengali',
@@ -125,43 +162,6 @@ export const scriptureCollections: ScriptureCollection[] = [
       {id: 'devi-kavach', title: 'Devi Kavach', subtitle: 'Protection and invocation'},
       {id: 'argala-stotram', title: 'Argala Stotram', subtitle: 'Opening praise'},
       {id: 'saptashati', title: 'Saptashati Path', subtitle: 'Main recitation cycle'},
-    ],
-  },
-  {
-    id: 'bhagavad-gita',
-    title: 'Srimad Bhagavad Gita',
-    subtitle: '18 adhyayas • Bengali',
-    description:
-      'Bengali paath of the Gita with chapter-wise verses, meaning, and devotional commentary.',
-    language: 'Bengali',
-    tradition: 'Vedanta',
-    symbol: 'ॐ',
-    accent: colors.saffron,
-    textProvider: 'gita-api',
-    audioSearchTerms: [
-      'bhagavad gita bengali',
-      'bhagavad gita bangla',
-      'srimad bhagavad gita bangla',
-      'srimad bhagavad gita bengali path',
-      'gita path bangla',
-      'gita paath bengali',
-      'gita bengali discourse',
-    ],
-    audioIncludeTerms: [
-      'gita',
-      'gita path',
-      'bhagavad gita',
-      'srimad bhagavad gita',
-      'geeta',
-    ],
-    audioExcludeTerms: [
-      ...commonBengaliExcludes,
-      ...commonLanguageExcludes,
-    ],
-    sections: [
-      {id: 'gita-1', title: 'Chapters 1-6', subtitle: 'Karma and self-mastery'},
-      {id: 'gita-2', title: 'Chapters 7-12', subtitle: 'Bhakti and knowledge'},
-      {id: 'gita-3', title: 'Chapters 13-18', subtitle: 'Nature, duty, liberation'},
     ],
   },
   {
@@ -485,7 +485,7 @@ export const scriptureCollections: ScriptureCollection[] = [
 ];
 
 export const featuredCollection =
-  scriptureCollections.find(collection => collection.id === 'chandi-path-bengali') ??
+  scriptureCollections.find(collection => collection.id === 'bhagavad-gita') ??
   scriptureCollections[0];
 
 export function getCollectionById(collectionId: string) {

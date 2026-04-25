@@ -10,14 +10,9 @@ export const defaultPodcastSearchTerm = 'bhagavad gita';
 
 export const defaultPodcastDiscoveryTerms = [
   'bhagavad gita',
-  'gita',
   'vedanta',
-  'sanskrit',
   'krishna',
   'hindu philosophy',
-  'spiritual wisdom',
-  'meditation',
-  'yoga philosophy',
   'indian scriptures',
 ] as const;
 
@@ -58,6 +53,7 @@ export function usePodcastDiscovery(
         limit: 12,
       }),
     staleTime: searchStaleTime,
+    retry: 1,
   });
 }
 
@@ -67,6 +63,7 @@ export function usePodcastEpisodes(feedUrl?: string) {
     queryKey: podcastQueryKeys.episodes(feedUrl),
     queryFn: () => getPodcastEpisodes(feedUrl as string),
     staleTime: episodesStaleTime,
+    retry: 1,
   });
 }
 

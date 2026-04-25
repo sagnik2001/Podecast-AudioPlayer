@@ -1,6 +1,10 @@
-import TrackPlayer, { Event } from 'react-native-track-player';
+import TrackPlayer, {Event} from 'react-native-track-player';
+
+import {registerPlaybackPersistenceListeners} from './trackPlayer';
 
 export async function PlaybackService() {
+  registerPlaybackPersistenceListeners();
+
   TrackPlayer.addEventListener(Event.RemotePlay, () => {
     TrackPlayer.play();
   });

@@ -6,15 +6,18 @@ import {
 } from 'react-native-track-player';
 
 import {Episode} from '../data/episodes';
+import {useAutoplay} from '../hooks/useAutoplay';
 import {useEpisodePlayback} from '../hooks/useEpisodePlayback';
 import {
-  seekBy,
   seekTo,
+  skipToNextEpisode,
+  skipToPreviousEpisode,
 } from '../services/trackPlayer';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
 import {PlayPauseIcon} from './PlayPauseIcon';
 import {SeekBar} from './SeekBar';
+import {AutoplayIcon, NextTrackIcon, PrevTrackIcon} from './TransportIcons';
 
 type PlayerDockProps = {
   episode: Episode;
@@ -38,6 +41,18 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
     isPlaying,
     togglePlayback,
   } = useEpisodePlayback(displayedEpisode, queue);
+  const {enabled: autoplayEnabled, toggle: toggleAutoplay} = useAutoplay();
+
+  const activeIndex = useMemo(() => {
+    const trackId = activeTrack?.id;
+    if (!trackId) {
+      return -1;
+    }
+    return queue.findIndex(item => item.id === trackId);
+  }, [activeTrack, queue]);
+  const hasNext = activeIndex >= 0 && activeIndex < queue.length - 1;
+  const hasPrev = activeIndex > 0;
+
   const positionLabel = isCurrentTrack
     ? formatPlaybackTime(progress.position)
     : formatEpisodeStartTime(displayedEpisode.progress, displayedEpisode.duration);
@@ -45,26 +60,33 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
     ? formatPlaybackTime(progress.duration)
     : formatEpisodeDuration(displayedEpisode.duration);
 
-  const onRewind = async () => {
-    if (!isCurrentTrack || isBusy) {
-      return;
-    }
-
-    await seekBy(-15);
-  };
-
   const onSeek = async (seconds: number) => {
     if (!isCurrentTrack || isBusy) {
       return;
     }
-
     await seekTo(seconds);
+  };
+
+  const onNext = async () => {
+    if (!hasNext) {
+      return;
+    }
+    await skipToNextEpisode();
+  };
+
+  const onPrev = async () => {
+    // Allow even when !hasPrev so we can use the "restart current" UX
+    if (!isCurrentTrack) {
+      return;
+    }
+    await skipToPreviousEpisode();
   };
 
   return (
     <View style={styles.wrap}>
       <View style={styles.glow} />
-      <View style={styles.row}>
+
+      <View style={styles.headerRow}>
         <CoverArt
           accent={displayedEpisode.accent}
           imageUrl={displayedEpisode.imageUrl}
@@ -86,21 +108,22 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
           </Text>
         </View>
         <TouchableOpacity
+          accessibilityLabel={
+            autoplayEnabled ? 'Disable autoplay' : 'Enable autoplay'
+          }
           activeOpacity={0.78}
-          disabled={!isCurrentTrack}
-          onPress={onRewind}
-          style={[styles.skipButton, !isCurrentTrack && styles.disabledButton]}>
-          <Text style={styles.skipText}>15</Text>
-          <Text style={styles.skipUnit}>sec</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.82}
-          disabled={!canPlay || isBusy}
-          onPress={togglePlayback}
-          style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
-          <PlayPauseIcon color={colors.background} isBusy={isBusy} isPlaying={isPlaying} />
+          onPress={toggleAutoplay}
+          style={[
+            styles.autoplayButton,
+            autoplayEnabled && styles.autoplayButtonActive,
+          ]}>
+          <AutoplayIcon
+            active={autoplayEnabled}
+            color={autoplayEnabled ? colors.background : colors.muted}
+          />
         </TouchableOpacity>
       </View>
+
       <View style={styles.progressRow}>
         <Text style={styles.time}>{positionLabel}</Text>
         <SeekBar
@@ -112,6 +135,42 @@ export function PlayerDock({episode, queue = [episode]}: PlayerDockProps) {
           position={isCurrentTrack ? progress.position : 0}
         />
         <Text style={styles.time}>{durationLabel}</Text>
+      </View>
+
+      <View style={styles.controlsRow}>
+        <TouchableOpacity
+          accessibilityLabel="Previous episode"
+          activeOpacity={0.78}
+          disabled={!isCurrentTrack}
+          onPress={onPrev}
+          style={[styles.transportButton, !isCurrentTrack && styles.disabledButton]}>
+          <PrevTrackIcon color={colors.ink} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
+          activeOpacity={0.82}
+          disabled={!canPlay || isBusy}
+          onPress={togglePlayback}
+          style={[
+            styles.playButton,
+            (!canPlay || isBusy) && styles.disabledButton,
+          ]}>
+          <PlayPauseIcon
+            color={colors.background}
+            isBusy={isBusy}
+            isPlaying={isPlaying}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          accessibilityLabel="Next episode"
+          activeOpacity={0.78}
+          disabled={!hasNext}
+          onPress={onNext}
+          style={[styles.transportButton, !hasNext && styles.disabledButton]}>
+          <NextTrackIcon color={colors.ink} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -229,7 +288,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     shadowColor: colors.black,
     shadowOffset: {height: 18, width: 0},
@@ -246,7 +305,7 @@ const styles = StyleSheet.create({
     top: -30,
     width: 80,
   },
-  row: {
+  headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
@@ -289,45 +348,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
   },
-  skipButton: {
+  autoplayButton: {
     alignItems: 'center',
     backgroundColor: colors.surfaceHigh,
-    borderRadius: 14,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  skipText: {
-    color: colors.ink,
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-    lineHeight: 14,
-  },
-  skipUnit: {
-    color: colors.dim,
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    marginTop: 1,
-    textTransform: 'uppercase',
-  },
-  playButton: {
-    alignItems: 'center',
-    backgroundColor: colors.brand,
     borderRadius: 999,
-    height: 48,
+    height: 36,
     justifyContent: 'center',
-    width: 48,
+    width: 36,
   },
-  disabledButton: {
-    opacity: 0.46,
-  },
-  playText: {
-    color: colors.background,
-    fontSize: 14,
-    fontWeight: '900',
-    marginLeft: 1,
+  autoplayButtonActive: {
+    backgroundColor: colors.brand,
   },
   progressRow: {
     alignItems: 'center',
@@ -341,5 +371,31 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,
+  },
+  controlsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 18,
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  transportButton: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceHigh,
+    borderRadius: 999,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  playButton: {
+    alignItems: 'center',
+    backgroundColor: colors.brand,
+    borderRadius: 999,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
+  disabledButton: {
+    opacity: 0.4,
   },
 });
