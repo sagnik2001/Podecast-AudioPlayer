@@ -4,6 +4,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 import {BootScreen} from '../screens/BootScreen';
 import {CollectionScreen} from '../screens/CollectionScreen';
+import {DownloadsScreen} from '../screens/DownloadsScreen';
 import {HomeScreen} from '../screens/HomeScreen';
 import {LibraryScreen} from '../screens/LibraryScreen';
 import {ReadScreen} from '../screens/ReadScreen';
@@ -26,6 +27,7 @@ export function AppNavigator() {
         <Stack.Screen component={HomeScreen} name="Home" />
         <Stack.Screen component={CollectionScreen} name="Collection" />
         <Stack.Screen component={LibraryScreen} name="Library" />
+        <Stack.Screen component={DownloadsScreen} name="Downloads" />
         <Stack.Screen component={ReadScreen} name="Read" />
       </Stack.Navigator>
     </NavigationContainer>

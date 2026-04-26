@@ -5,6 +5,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 import {AppNavigator} from './src/navigation/AppNavigator';
+import {reconcileDownloadsOnBoot} from './src/services/downloads';
 import {restorePersistedPlayback} from './src/services/trackPlayer';
 
 const queryClient = new QueryClient({
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 function App() {
   useEffect(() => {
     restorePersistedPlayback().catch(() => undefined);
+    reconcileDownloadsOnBoot().catch(() => undefined);
   }, []);
 
   return (

@@ -12,8 +12,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
 import {EpisodeCard} from '../components/EpisodeCard';
+import {OfflineBanner, OfflineEmptyState} from '../components/OfflineState';
 import {PlayerDock} from '../components/PlayerDock';
 import {Episode} from '../data/episodes';
+import {DownloadView, useDownloadsList} from '../hooks/useDownload';
 import {useRestoredPlayback} from '../hooks/useRestoredPlayback';
 import {RootStackParamList} from '../navigation/types';
 import {
@@ -40,6 +42,25 @@ function isCollectionAudioResult(
   result: CollectionAudioResult | undefined,
 ): result is CollectionAudioResult {
   return Boolean(result);
+}
+
+function downloadToEpisode(download: DownloadView): Episode {
+  const snap = download.episodeSnapshot;
+  return {
+    id: download.episodeId,
+    title: snap.title,
+    show: snap.show,
+    description: snap.description,
+    tag: snap.tag,
+    duration: snap.duration,
+    published: snap.published,
+    progress: 0,
+    phase: snap.phase,
+    accent: snap.accent,
+    downloaded: true,
+    audioUrl: download.localPath ? `file://${download.localPath}` : undefined,
+    imageUrl: snap.imageUrl,
+  };
 }
 
 const keyExtractor = (item: Episode) => item.id;
@@ -74,7 +95,7 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
   const loadedCollectionCount = collectionAudioResults.filter(
     result => result.episodes.length > 0,
   ).length;
-  const orderedEpisodes = useMemo(
+  const liveOrderedEpisodes = useMemo(
     () =>
       collectionAudioResults
         .flatMap(result =>
@@ -97,6 +118,26 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
         })),
     [collectionAudioResults],
   );
+  const downloads = useDownloadsList();
+  const offlineEpisodes = useMemo(
+    () =>
+      downloads
+        .filter(d => d.status === 'completed')
+        .map((d, index) => ({...downloadToEpisode(d), queuePosition: index + 1})),
+    [downloads],
+  );
+  const isOffline =
+    Boolean(realDataError) && liveOrderedEpisodes.length === 0;
+  const orderedEpisodes = useMemo(() => {
+    if (liveOrderedEpisodes.length > 0) {
+      return liveOrderedEpisodes;
+    }
+    if (isOffline) {
+      return offlineEpisodes;
+    }
+    return liveOrderedEpisodes;
+  }, [liveOrderedEpisodes, isOffline, offlineEpisodes]);
+  const downloadedCount = offlineEpisodes.length;
 
   const filteredEpisodes = useMemo(() => {
     if (activeFilter === 'inProgress') {
@@ -168,8 +209,12 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
             <Text style={styles.iconGlyph}>←</Text>
           </TouchableOpacity>
           <Text style={styles.topBarTitle}>Library</Text>
-          <TouchableOpacity activeOpacity={0.78} style={styles.iconButton}>
-            <Text style={styles.iconGlyph}>⌕</Text>
+          <TouchableOpacity
+            accessibilityLabel="Downloads"
+            activeOpacity={0.78}
+            onPress={() => navigation.navigate('Downloads')}
+            style={styles.iconButton}>
+            <Text style={styles.iconGlyph}>↓</Text>
           </TouchableOpacity>
         </View>
 
@@ -181,6 +226,8 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
               ? `Streaming from ${loadedCollectionCount} collections`
               : isLoadingRealData
               ? 'Finding spiritual feeds and recitations.'
+              : isOffline
+              ? `Offline · ${downloadedCount} saved teaching${downloadedCount === 1 ? '' : 's'}`
               : 'No live source available right now.'}
           </Text>
         </View>
@@ -244,12 +291,21 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           </Text>
           <Text style={styles.sectionCount}>{filteredEpisodes.length}</Text>
         </View>
+
+        {isOffline && downloadedCount > 0 ? (
+          <OfflineBanner
+            downloadedCount={downloadedCount}
+            onOpenDownloads={() => navigation.navigate('Downloads')}
+          />
+        ) : null}
       </View>
     ),
     [
       activeFilter,
+      downloadedCount,
       filteredEpisodes.length,
       isLoadingRealData,
+      isOffline,
       loadedCollectionCount,
       navigation,
       totals.inProgress,
@@ -258,29 +314,45 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
     ],
   );
 
-  const renderEmpty = useCallback(
-    () => (
+  const renderEmpty = useCallback(() => {
+    if (isLoadingRealData) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Loading teachings</Text>
+          <Text style={styles.emptyBody}>
+            Fetching Apple Podcasts and Internet Archive sources, then loading
+            playable audio.
+          </Text>
+        </View>
+      );
+    }
+    if (activeFilter !== 'all') {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Nothing here yet</Text>
+          <Text style={styles.emptyBody}>
+            Try a different filter or check back after listening more.
+          </Text>
+        </View>
+      );
+    }
+    if (isOffline) {
+      return (
+        <OfflineEmptyState
+          downloadedCount={downloadedCount}
+          onOpenDownloads={() => navigation.navigate('Downloads')}
+        />
+      );
+    }
+    return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyTitle}>
-          {isLoadingRealData
-            ? 'Loading teachings'
-            : activeFilter !== 'all'
-            ? 'Nothing here yet'
-            : 'No playable episodes'}
-        </Text>
+        <Text style={styles.emptyTitle}>No playable episodes</Text>
         <Text style={styles.emptyBody}>
-          {isLoadingRealData
-            ? 'Fetching Apple Podcasts and Internet Archive sources, then loading playable audio.'
-            : activeFilter !== 'all'
-            ? 'Try a different filter or check back after listening more.'
-            : realDataError instanceof Error
-            ? realDataError.message
-            : 'The selected feed returned no playable audio files.'}
+          The selected feed returned no playable audio files.
         </Text>
       </View>
-    ),
-    [activeFilter, isLoadingRealData, realDataError],
-  );
+    );
+  }, [activeFilter, downloadedCount, isLoadingRealData, isOffline, navigation]);
 
   const renderFooter = useCallback(
     () => (

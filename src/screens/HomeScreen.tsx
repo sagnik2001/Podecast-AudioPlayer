@@ -12,12 +12,15 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {EpisodeCard} from '../components/EpisodeCard';
+import {OfflineBanner, OfflineEmptyState} from '../components/OfflineState';
 import {PlayerDock} from '../components/PlayerDock';
 import {ProgressBar} from '../components/ProgressBar';
 import {ShelfCard} from '../components/ShelfCard';
 import {selectCollectionPodcastShow} from '../content/audioSources';
 import {featuredCollection, scriptureCollections} from '../content/collections';
 import {mapPodcastEpisodeToEpisode} from '../api/episodeMapper';
+import {Episode} from '../data/episodes';
+import {DownloadView, useDownloadsList} from '../hooks/useDownload';
 import {useRestoredPlayback} from '../hooks/useRestoredPlayback';
 import {RootStackParamList} from '../navigation/types';
 import {
@@ -72,6 +75,25 @@ const practiceModes: PracticeMode[] = [
   },
 ];
 
+function downloadToEpisode(download: DownloadView): Episode {
+  const snap = download.episodeSnapshot;
+  return {
+    id: download.episodeId,
+    title: snap.title,
+    show: snap.show,
+    description: snap.description,
+    tag: snap.tag,
+    duration: snap.duration,
+    published: snap.published,
+    progress: 0,
+    phase: snap.phase,
+    accent: snap.accent,
+    downloaded: true,
+    audioUrl: download.localPath ? `file://${download.localPath}` : undefined,
+    imageUrl: snap.imageUrl,
+  };
+}
+
 type SanskritGreeting = {salutation: string; subtitle: string};
 
 function getSanskritGreeting(): SanskritGreeting {
@@ -118,13 +140,32 @@ export function HomeScreen({navigation}: HomeScreenProps) {
     podcastDiscovery.data,
   );
   const podcastEpisodes = usePodcastEpisodes(selectedShow?.feedUrl);
-  const liveEpisodes =
-    podcastEpisodes.data?.slice(0, 6).map(mapPodcastEpisodeToEpisode) ?? [];
-  const displayEpisodes = liveEpisodes;
-  const heroEpisode = displayEpisodes[0] ?? restoredPlayback.episode;
+  const liveEpisodes = useMemo(
+    () => podcastEpisodes.data?.slice(0, 6).map(mapPodcastEpisodeToEpisode) ?? [],
+    [podcastEpisodes.data],
+  );
+  const downloads = useDownloadsList();
+  const offlineEpisodes = useMemo(
+    () =>
+      downloads
+        .filter(d => d.status === 'completed')
+        .map(downloadToEpisode),
+    [downloads],
+  );
   const isLoadingRealData =
     podcastDiscovery.isLoading || podcastEpisodes.isLoading;
   const realDataError = podcastDiscovery.error ?? podcastEpisodes.error;
+  // Treat as offline when the network calls failed AND we have no live data.
+  // (Once a query has succeeded, react-query keeps cached data and `error` is
+  // cleared, so this naturally goes back to live mode when reconnected.)
+  const isOffline = Boolean(realDataError) && liveEpisodes.length === 0;
+  const displayEpisodes: Episode[] = liveEpisodes.length > 0
+    ? liveEpisodes
+    : isOffline
+      ? offlineEpisodes
+      : [];
+  const heroEpisode = displayEpisodes[0] ?? restoredPlayback.episode;
+  const downloadedCount = offlineEpisodes.length;
   const dataLabel = selectedShow ? selectedShow.title : 'podcast feed';
   const greeting = useMemo(getSanskritGreeting, []);
 
@@ -178,7 +219,11 @@ export function HomeScreen({navigation}: HomeScreenProps) {
         <View style={styles.heroLabel}>
           <View style={styles.heroLabelDot} />
           <Text style={styles.heroLabelText}>
-            {isLoadingRealData ? 'Loading sadhana' : 'Continue your sadhana'}
+            {isLoadingRealData
+              ? 'Loading sadhana'
+              : isOffline
+                ? 'Listening offline'
+                : 'Continue your sadhana'}
           </Text>
         </View>
         <View style={styles.hero}>
@@ -201,7 +246,9 @@ export function HomeScreen({navigation}: HomeScreenProps) {
                 {heroEpisode?.title ??
                   (isLoadingRealData
                     ? 'Tuning the feed…'
-                    : 'No live sessions found')}
+                    : isOffline
+                      ? 'Reconnect to gather teachings'
+                      : 'No live sessions found')}
               </Text>
               <Text numberOfLines={1} style={styles.heroShow}>
                 {heroEpisode?.show ?? dataLabel}
@@ -354,27 +401,40 @@ export function HomeScreen({navigation}: HomeScreenProps) {
         </View>
 
         {displayEpisodes.length > 0 ? (
-          displayEpisodes
-            .slice(0, 4)
-            .map(episode => (
+          <>
+            {isOffline ? (
+              <OfflineBanner
+                downloadedCount={downloadedCount}
+                onOpenDownloads={() => navigation.navigate('Downloads')}
+              />
+            ) : null}
+            {displayEpisodes.slice(0, 4).map(episode => (
               <EpisodeCard
                 episode={episode}
                 key={episode.id}
                 queue={displayEpisodes}
               />
-            ))
+            ))}
+          </>
+        ) : isLoadingRealData ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyOm}>ॐ</Text>
+            <Text style={styles.emptyTitle}>Gathering teachings</Text>
+            <Text style={styles.emptyBody}>
+              Fetching recitations, lectures, and sacred readings.
+            </Text>
+          </View>
+        ) : isOffline ? (
+          <OfflineEmptyState
+            downloadedCount={downloadedCount}
+            onOpenDownloads={() => navigation.navigate('Downloads')}
+          />
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyOm}>ॐ</Text>
-            <Text style={styles.emptyTitle}>
-              {isLoadingRealData ? 'Gathering teachings' : 'No teachings yet'}
-            </Text>
+            <Text style={styles.emptyTitle}>No teachings yet</Text>
             <Text style={styles.emptyBody}>
-              {isLoadingRealData
-                ? 'Fetching recitations, lectures, and sacred readings.'
-                : realDataError instanceof Error
-                ? realDataError.message
-                : 'The current feed returned no playable audio.'}
+              The current feed returned no playable audio.
             </Text>
           </View>
         )}

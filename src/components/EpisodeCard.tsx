@@ -5,6 +5,7 @@ import {Episode} from '../data/episodes';
 import {useEpisodePlayback} from '../hooks/useEpisodePlayback';
 import {colors} from '../theme/colors';
 import {CoverArt} from './CoverArt';
+import {DownloadButton} from './DownloadButton';
 import {PlayPauseIcon} from './PlayPauseIcon';
 import {ProgressBar} from './ProgressBar';
 
@@ -74,13 +75,16 @@ export function EpisodeCard({
           </View>
         ) : null}
       </View>
-      <TouchableOpacity
-        activeOpacity={0.82}
-        disabled={!canPlay || isBusy}
-        onPress={togglePlayback}
-        style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
-        <PlayPauseIcon color={colors.background} isBusy={isBusy} isPlaying={isPlaying} size="sm" />
-      </TouchableOpacity>
+      <View style={styles.actions}>
+        {episode.audioUrl ? <DownloadButton episode={episode} size="sm" /> : null}
+        <TouchableOpacity
+          activeOpacity={0.82}
+          disabled={!canPlay || isBusy}
+          onPress={togglePlayback}
+          style={[styles.playButton, (!canPlay || isBusy) && styles.disabledButton]}>
+          <PlayPauseIcon color={colors.background} isBusy={isBusy} isPlaying={isPlaying} size="sm" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -224,6 +228,12 @@ const styles = StyleSheet.create({
     color: colors.dim,
     fontSize: 11,
     fontWeight: '700',
+  },
+  actions: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   playButton: {
     alignItems: 'center',

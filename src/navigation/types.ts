@@ -3,6 +3,7 @@ export type RootStackParamList = {
   Collection: {
     collectionId: string;
   };
+  Downloads: undefined;
   Home: undefined;
   Library: undefined;
   Read: {

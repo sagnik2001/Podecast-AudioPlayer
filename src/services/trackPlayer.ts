@@ -7,6 +7,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 
 import {Episode} from '../data/episodes';
+import {getLocalAudioUrlForEpisode} from './downloads';
 import {
   createQueueSignature,
   readPlaybackSnapshot,
@@ -92,8 +93,9 @@ export async function playEpisode(
   const activeTrack = await TrackPlayer.getActiveTrack().catch(() => undefined);
   const progress = await TrackPlayer.getProgress().catch(() => undefined);
   const playableQueue = getPlayableQueue(queue, episode);
-  const queueSignature = playableQueue.map(item => item.id).join('|');
-  const selectedTrackIndex = playableQueue.findIndex(
+  const resolvedQueue = await resolveLocalAudioForQueue(playableQueue);
+  const queueSignature = resolvedQueue.map(item => item.id).join('|');
+  const selectedTrackIndex = resolvedQueue.findIndex(
     item => item.id === episode.id,
   );
   const initialPosition =
@@ -101,7 +103,7 @@ export async function playEpisode(
 
   if (loadedQueueSignature !== queueSignature) {
     await TrackPlayer.reset();
-    await TrackPlayer.add(playableQueue.map(toTrack));
+    await TrackPlayer.add(resolvedQueue.map(toTrack));
     loadedQueueSignature = queueSignature;
   }
 
@@ -232,6 +234,20 @@ export function isPlaybackStateLoading(state?: State) {
   return state === State.Buffering || state === State.Loading;
 }
 
+async function resolveLocalAudioForQueue(queue: Episode[]): Promise<Episode[]> {
+  return Promise.all(
+    queue.map(async episode => {
+      const localUrl = await getLocalAudioUrlForEpisode(episode.id).catch(
+        () => undefined,
+      );
+      if (!localUrl) {
+        return episode;
+      }
+      return {...episode, audioUrl: localUrl, downloaded: true};
+    }),
+  );
+}
+
 function getPlayableQueue(queue: Episode[], selectedEpisode: Episode) {
   const playableQueue = queue.filter(item => Boolean(item.audioUrl));
 
@@ -272,7 +288,8 @@ async function restorePlaybackSnapshot() {
   await setupPodcastPlayer();
 
   const playableQueue = getPlayableQueue(snapshot.queue, activeEpisode);
-  const queueSignature = createQueueSignature(playableQueue);
+  const resolvedQueue = await resolveLocalAudioForQueue(playableQueue);
+  const queueSignature = createQueueSignature(resolvedQueue);
   const nativeQueue = await TrackPlayer.getQueue().catch((): Track[] => []);
   const nativeQueueSignature = nativeQueue
     .map(track => String(track.id ?? ''))
@@ -280,13 +297,13 @@ async function restorePlaybackSnapshot() {
 
   if (nativeQueueSignature !== queueSignature) {
     await TrackPlayer.reset();
-    await TrackPlayer.add(playableQueue.map(toTrack));
+    await TrackPlayer.add(resolvedQueue.map(toTrack));
   }
 
   loadedQueueSignature = queueSignature;
 
   const activeTrack = await TrackPlayer.getActiveTrack().catch(() => undefined);
-  const selectedTrackIndex = playableQueue.findIndex(
+  const selectedTrackIndex = resolvedQueue.findIndex(
     episode => episode.id === snapshot.activeEpisodeId,
   );
 

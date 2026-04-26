@@ -12,3 +12,6 @@
 # React Native/native-module internals.
 -keep class com.podcastplayer.** { *; }
 -keep class com.doublesymmetry.trackplayer.service.** { *; }
+
+# WatermelonDB — keep native bridge classes used reflectively from JS.
+-keep class com.nozbe.watermelondb.** { *; }
