@@ -190,19 +190,31 @@ function DownloadRow({download}: {download: DownloadView}) {
       <View style={styles.rowActions}>
         {status !== 'completed' ? (
           <TouchableOpacity
-            activeOpacity={0.78}
+            accessibilityLabel={
+              status === 'paused' || status === 'failed'
+                ? 'Resume download'
+                : 'Pause download'
+            }
+            activeOpacity={0.82}
+            hitSlop={6}
             onPress={onPrimary}
             style={styles.actionButton}>
-            <Text style={styles.actionGlyph}>
-              {status === 'paused' || status === 'failed' ? '↻' : '⏸'}
+            <Text style={styles.actionLabel}>
+              {status === 'paused' || status === 'failed' ? 'Resume' : 'Pause'}
             </Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity
-          activeOpacity={0.78}
+          accessibilityLabel={
+            status === 'completed' ? 'Remove from device' : 'Cancel download'
+          }
+          activeOpacity={0.82}
+          hitSlop={6}
           onPress={onRemove}
           style={[styles.actionButton, styles.actionButtonDanger]}>
-          <Text style={[styles.actionGlyph, styles.actionGlyphDanger]}>×</Text>
+          <Text style={[styles.actionLabel, styles.actionLabelDanger]}>
+            {status === 'completed' ? 'Remove' : 'Cancel'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -371,33 +383,34 @@ const styles = StyleSheet.create({
   },
   rowShow: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.1,
+    fontWeight: '800',
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   rowTitle: {
     color: colors.ink,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: -0.1,
-    marginTop: 4,
+    lineHeight: 21,
+    marginTop: 5,
   },
   statusLine: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
-    marginTop: 6,
+    marginTop: 8,
   },
   statusText: {
     color: colors.muted,
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
   statusBytes: {
     color: colors.dim,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   progressTrack: {
@@ -412,26 +425,32 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   rowActions: {
-    flexDirection: 'row',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 6,
+    justifyContent: 'center',
   },
   actionButton: {
     alignItems: 'center',
     backgroundColor: colors.surfaceHigh,
-    borderRadius: 999,
-    height: 36,
+    borderRadius: 12,
+    minHeight: 34,
+    minWidth: 78,
     justifyContent: 'center',
-    width: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
   actionButtonDanger: {
     backgroundColor: colors.surfaceHigh,
+    borderColor: 'rgba(229, 127, 127, 0.3)',
+    borderWidth: 1,
   },
-  actionGlyph: {
+  actionLabel: {
     color: colors.ink,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
-  actionGlyphDanger: {
+  actionLabelDanger: {
     color: '#e57f7f',
   },
 });

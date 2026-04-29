@@ -210,11 +210,12 @@ export function LibraryScreen({navigation}: LibraryScreenProps) {
           </TouchableOpacity>
           <Text style={styles.topBarTitle}>Library</Text>
           <TouchableOpacity
-            accessibilityLabel="Downloads"
+            accessibilityLabel="Open downloads"
             activeOpacity={0.78}
             onPress={() => navigation.navigate('Downloads')}
-            style={styles.iconButton}>
-            <Text style={styles.iconGlyph}>↓</Text>
+            style={styles.downloadsChip}>
+            <Text style={styles.downloadsChipGlyph}>↓</Text>
+            <Text style={styles.downloadsChipLabel}>Downloads</Text>
           </TouchableOpacity>
         </View>
 
@@ -424,6 +425,29 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontSize: 18,
     fontWeight: '700',
+  },
+  downloadsChip: {
+    alignItems: 'center',
+    backgroundColor: colors.brandTint,
+    borderColor: colors.brandBorder,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  downloadsChipGlyph: {
+    color: colors.brand,
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  downloadsChipLabel: {
+    color: colors.brand,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   topBarTitle: {
     color: colors.muted,

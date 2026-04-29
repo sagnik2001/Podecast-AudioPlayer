@@ -76,7 +76,7 @@ export function EpisodeCard({
         ) : null}
       </View>
       <View style={styles.actions}>
-        {episode.audioUrl ? <DownloadButton episode={episode} size="sm" /> : null}
+        {episode.audioUrl ? <DownloadButton episode={episode} variant="compact" /> : null}
         <TouchableOpacity
           activeOpacity={0.82}
           disabled={!canPlay || isBusy}
